@@ -11,14 +11,14 @@ export function createSeparationService({ dataRoot = resolve('.data/separations'
   const env = { ...process.env, PYTHONUTF8: '1', TORCH_HOME: modelsRoot };
   function json(res, code, body) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); }
   async function readiness() {
-    try { await access(python); } catch { return { available: false, message: 'Instale o motor de separação: execute npm run setup:separation no terminal e reinicie o servidor.' }; }
+    try { await access(python); } catch { return { available: false, message: 'Motor ausente. Execute o instalador do Josué App novamente e reinicie o aplicativo.' }; }
     return new Promise(resolveResult => {
       let child;
       try { child = launch(python, [worker, '--check'], { env, windowsHide: true }); }
       catch { resolveResult({ available: false, message: 'O servidor não conseguiu iniciar o Python. Reinicie npm run dev no seu terminal.' }); return; }
       const timer = setTimeout(() => { child.kill(); resolveResult({ available: false, message: 'O motor demorou para responder. Tente novamente.' }); }, 30000);
       child.on('error', () => { clearTimeout(timer); resolveResult({ available: false, message: 'Não foi possível iniciar o Python do motor de separação.' }); });
-      child.on('close', code => { clearTimeout(timer); resolveResult({ available: code === 0, message: code === 0 ? 'Motor de separação pronto.' : 'Dependências incompletas. Execute npm run setup:separation e reinicie o servidor.' }); });
+      child.on('close', code => { clearTimeout(timer); resolveResult({ available: code === 0, message: code === 0 ? 'Motor de separação pronto.' : 'Dependências incompletas. Execute o instalador do Josué App novamente.' }); });
     });
   }
   async function run(job, input, output) {
@@ -37,7 +37,7 @@ export function createSeparationService({ dataRoot = resolve('.data/separations'
     });
     let finished = false;
     const fail = message => { if (finished) return; finished = true; job.status = 'failed'; job.message = message; active = false; };
-    child.on('error', () => fail('Não foi possível iniciar o motor. Execute npm run setup:separation.'));
+    child.on('error', () => fail('Não foi possível iniciar o motor. Execute o instalador do Josué App novamente.'));
     child.on('close', async code => {
       if (finished) return;
       if (code !== 0) { await writeFile(join(output, 'error.log'), diagnostic).catch(() => {}); fail(job.stage === 'error' ? job.message : 'Falha na separação. Verifique o áudio e a conexão para baixar o modelo na primeira execução. Detalhes em .data/separations.'); return; }

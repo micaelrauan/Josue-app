@@ -1,6 +1,6 @@
 # Josué App
 
-Aplicativo desktop **open source** para Windows. Organize músicas em uma biblioteca local, reproduza e mixe faixas no Studio e, com o motor opcional instalado, separe vocais e instrumentos no próprio computador. Não é necessário criar uma conta.
+Aplicativo desktop **open source** para Windows. Organize músicas em uma biblioteca local, reproduza e mixe faixas no Studio e separe vocais e instrumentos no próprio computador. Não é necessário criar uma conta.
 
 O projeto é independente e não é afiliado ao Moises. A separação usa [Demucs 4](https://github.com/facebookresearch/demucs). Transcrição automática de letras, reconhecimento automático de acordes e modelos proprietários de outros serviços não estão incluídos.
 
@@ -14,25 +14,23 @@ O projeto é independente e não é afiliado ao Moises. A separação usa [Demuc
 
 ## Instalar o aplicativo pronto
 
-1. Baixe `JosueApp-windows-x64.zip` na seção **Releases** do repositório, quando houver uma versão publicada. Se estiver trabalhando com uma cópia do projeto já compilada, use `dist/JosueApp-windows-x64.zip`.
-2. Extraia o ZIP inteiro para uma pasta de sua escolha. Mantenha os arquivos e a pasta `resources` juntos.
-3. Abra `JosueApp-win32-x64\Josue App.exe`. O aplicativo é portátil: não há instalador nem é necessário instalar Node.js para executar o player, a biblioteca e a exportação WAV.
+1. Baixe `JosueApp-Setup.exe` na seção **Releases** do repositório, quando houver uma versão publicada. Num build local, use `dist/JosueApp-Setup.exe`.
+2. Abra o instalador e clique em **Instalar**. Ele copia o aplicativo para `%LOCALAPPDATA%\Programs\Josue App`, cria um atalho no menu Iniciar e, se solicitado, na área de trabalho. Depois baixa e prepara automaticamente Python, PyTorch, Demucs, FFmpeg e os modelos de separação.
+3. Aguarde a mensagem **Instalação concluída** e clique em **Abrir app**. A etapa do motor exige internet, alguns GB livres e pode demorar vários minutos. Se falhar, clique em **Tentar de novo**; o diagnóstico fica em `%LOCALAPPDATA%\JosueApp\install.log`.
+
+Para remover o aplicativo, use **Desinstalar Josué App** nas configurações do Windows. Os projetos e o motor em `%LOCALAPPDATA%\JosueApp` são preservados para uma futura instalação.
 
 **Requisitos:** Windows 10 ou 11 de 64 bits e espaço para os arquivos de música. O executável não tem assinatura digital; o Windows pode pedir confirmação ao abrir um build local.
 
 O aplicativo usa `127.0.0.1:4174` somente para comunicar sua janela com o serviço local. Se essa porta estiver ocupada, feche o processo que a utiliza e abra o aplicativo novamente. A interface permanece dentro da janela do aplicativo.
 
-### Instalar o motor de separação (opcional)
+### Pacote portátil (alternativo)
 
-1. Conecte-se à internet e reserve alguns GB livres para Python, PyTorch, FFmpeg e os modelos.
-2. Abra o PowerShell na pasta extraída, onde estão `Josue App.exe` e `Instalar motor.ps1`.
-3. Execute:
+O arquivo `JosueApp-windows-x64.zip` continua disponível para uso sem instalação. Extraia o ZIP inteiro e abra `JosueApp-win32-x64\Josue App.exe`. Nesse modo, o motor pode ser instalado manualmente na pasta extraída com:
 
-   ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File '.\Instalar motor.ps1'
-   ```
-
-4. Aguarde a instalação terminar e feche e abra o aplicativo novamente.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File '.\Instalar motor.ps1'
+```
 
 O motor é instalado em `%LOCALAPPDATA%\JosueApp\engine`. A separação de uma música em CPU pode demorar mais que a duração do áudio. O modelo de 6 canais é experimental e pode misturar partes de instrumentos. O limite por arquivo enviado para separação é de **250 MB** e **20 minutos**.
 
@@ -43,19 +41,22 @@ No Windows 10/11 de 64 bits, instale [Node.js 22 ou superior](https://nodejs.org
 ```powershell
 git clone https://github.com/micaelrauan/Josue-app.git
 cd Josue-app
-npm run build:desktop
+npm run build:installer
 ```
 
-Também é possível baixar o código pelo botão **Code → Download ZIP** no GitHub, extrair e executar `npm run build:desktop` dentro da pasta. Não há dependências npm de produção para instalar antes do build.
+Também é possível baixar o código pelo botão **Code → Download ZIP** no GitHub, extrair e executar `npm run build:installer` dentro da pasta. Para gerar apenas o pacote portátil, use `npm run build:desktop`. Não há dependências npm de produção para instalar antes do build.
 
 O script obtém o pacote oficial do Electron quando necessário, confere seu SHA-256 e gera:
 
 | Arquivo | Uso |
 | --- | --- |
-| `dist/JosueApp-win32-x64/Josue App.exe` | Executável portátil com ícone próprio. |
-| `dist/JosueApp-windows-x64.zip` | Pacote completo para distribuir ou copiar para outro computador. |
+| `dist/JosueApp-Setup.exe` | Instalador completo do app; baixa o motor durante a instalação. |
+| `dist/JosueApp-windows-x64.zip` | Pacote portátil para uso manual. |
+| `dist/JosueApp-win32-x64/Josue App.exe` | Executável portátil, gerado por `build:desktop`. |
 
 Para modificar o ícone, edite `tools/make-icon.py`, execute `python tools/make-icon.py` e compile novamente. O Python só é necessário para gerar o ícone ou instalar o motor, não para compilar o executável padrão.
+
+Após gerar o instalador, `npm run clean:cache` remove as cópias temporárias da compilação e dos testes de extração. O instalador em `dist/` e o ZIP do Electron usado em compilações futuras são preservados.
 
 ## Usar o Studio
 
@@ -80,7 +81,7 @@ Os dados de instalações anteriores no navegador não são importados automatic
 | O aplicativo avisa que a porta 4174 está ocupada | Feche outro processo que use essa porta e abra `Josue App.exe` novamente. |
 | A biblioteca está vazia | Confira se está usando o mesmo perfil do Windows e se `%LOCALAPPDATA%\JosueApp` não foi apagado. Importe novamente os arquivos originais, se necessário. |
 | O áudio não abre no Studio | Experimente um MP3 ou WAV válido e aguarde a importação terminar. |
-| O motor não está disponível | Execute `Instalar motor.ps1` na pasta do aplicativo, aguarde o fim e reinicie o aplicativo. Confira a internet e o espaço livre. |
+| O motor não está disponível | Execute o instalador novamente e aguarde o fim, ou use `Instalar motor.ps1` no pacote portátil. Confira a internet, o espaço livre e `%LOCALAPPDATA%\JosueApp\install.log`. |
 | MP3/M4A indisponíveis para exportar | Instale o motor para obter FFmpeg. WAV continua disponível. |
 | A separação falhou | Confira o arquivo e os limites de 250 MB/20 minutos. Procure detalhes em `%LOCALAPPDATA%\JosueApp\data\separations\<id>\error.log`. |
 

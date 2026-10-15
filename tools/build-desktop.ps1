@@ -1,4 +1,4 @@
-param([string]$ElectronZip)
+param([string]$ElectronZip, [string]$OutputRoot)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -18,12 +18,14 @@ if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash -ne $expecte
     throw "O pacote do Electron não passou na verificação SHA-256: $archivePath"
 }
 
-$target = Join-Path $projectRoot 'dist\JosueApp-win32-x64'
+$outputDirectory = if ($OutputRoot) { [System.IO.Path]::GetFullPath($OutputRoot) } else { Join-Path $projectRoot 'dist' }
+$target = Join-Path $outputDirectory 'JosueApp-win32-x64'
 $resolvedProject = [System.IO.Path]::GetFullPath($projectRoot).TrimEnd('\') + '\'
 $resolvedTarget = [System.IO.Path]::GetFullPath($target)
 if (-not $resolvedTarget.StartsWith($resolvedProject, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'O destino do build está fora do projeto.'
 }
+New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $target | Out-Null
 Expand-Archive -LiteralPath $archivePath -DestinationPath $target -Force
@@ -100,7 +102,7 @@ public static class ExecutableIcon {
 }
 '@
 [ExecutableIcon]::Apply($executable, $iconFile)
-$zipOutput = Join-Path $projectRoot 'dist\JosueApp-windows-x64.zip'
+$zipOutput = Join-Path $outputDirectory 'JosueApp-windows-x64.zip'
 if (Test-Path -LiteralPath $zipOutput) { Remove-Item -LiteralPath $zipOutput }
 Compress-Archive -LiteralPath $target -DestinationPath $zipOutput -CompressionLevel Optimal
 Write-Host "Desktop pronto: $executable" -ForegroundColor Green

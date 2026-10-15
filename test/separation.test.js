@@ -24,7 +24,7 @@ test('missing engine is reported and never produces fabricated stems', async t =
   assert.equal(status.available, false);
   const result = await fetch(`${base}/api/separations`, { method: 'POST', body: 'audio' });
   assert.equal(result.status, 503);
-  assert.match((await result.json()).error, /setup:separation/);
+  assert.match((await result.json()).error, /instalador do Josué App/);
 });
 
 test('API tracks worker events and serves only its WAV stems (test double, no AI inference)', async t => {

@@ -11,6 +11,8 @@
   "main": "desktop/main.cjs",
   "scripts": {
     "build:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-desktop.ps1",
+    "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-installer.ps1",
+    "clean:cache": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/clean-build-cache.ps1",
     "test": "node test/run.js"
   }
 }
