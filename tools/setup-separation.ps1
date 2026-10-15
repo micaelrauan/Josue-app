@@ -36,7 +36,7 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
         $install = Start-Process -FilePath $installerPath -ArgumentList @('/quiet', 'InstallAllUsers=0', "TargetDir=`"$targetPath`"", 'Include_launcher=0', 'Include_test=0', 'Shortcuts=0', 'AssociateFiles=0', 'PrependPath=0') -WindowStyle Hidden -PassThru -Wait
         if ($install.ExitCode -notin @(0, 3010)) { throw "Falha ao instalar Python: $($install.ExitCode)" }
         if (-not (Test-Path -LiteralPath (Join-Path $targetPath 'python.exe'))) {
-            throw 'O instalador terminou, mas Python 3.11 não apareceu na pasta do motor. O Windows pode manter um registro de instalação antiga em uma pasta apagada. Desinstale Python 3.11 em Aplicativos instalados e execute Instalar motor.ps1 novamente.'
+            throw 'O instalador terminou, mas Python 3.11 não apareceu na pasta do motor. Há uma instalação antiga registrada em uma pasta apagada. Abra o instalador do Python 3.11, escolha Reparar e depois Desinstalar; em seguida execute Instalar motor.ps1 novamente.'
         }
     }
 }
