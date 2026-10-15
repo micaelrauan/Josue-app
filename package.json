@@ -1,5 +1,6 @@
 {
   "name": "josue-app",
+  "productName": "Josué App",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
@@ -7,8 +8,10 @@
     "node": ">=22"
   },
   "type": "module",
+  "main": "desktop/main.cjs",
   "scripts": {
     "dev": "node server.js",
+    "build:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-desktop.ps1",
     "setup:separation": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup-separation.ps1",
     "test": "node test/run.js"
   }

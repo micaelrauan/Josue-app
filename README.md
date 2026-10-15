@@ -1,6 +1,6 @@
 # Josué App
 
-Aplicativo web **open source** para organizar músicas, reproduzir e mixar faixas e separar vocais e instrumentos no próprio computador. O servidor escuta apenas em `127.0.0.1`; não é necessário criar conta.
+Aplicativo **open source** para Windows e navegador local: organiza músicas, reproduz e mixa faixas e separa vocais e instrumentos no próprio computador. O servidor escuta apenas em `127.0.0.1`; não é necessário criar conta.
 
 O projeto é independente e não é afiliado ao Moises. A separação usa o [Demucs 4](https://github.com/facebookresearch/demucs), com modelos baixados durante a instalação. Transcrição automática de letra, identificação automática de acordes e os modelos proprietários de outros serviços não fazem parte deste aplicativo.
 
@@ -17,14 +17,40 @@ O projeto é independente e não é afiliado ao Moises. A separação usa o [Dem
 | Item | Necessário para |
 | --- | --- |
 | Windows 10/11, 64 bits | Instalação automatizada do motor de separação; os scripts atuais usam caminhos do Windows. |
-| [Node.js 22 ou superior](https://nodejs.org/en/download) e npm | Servidor local e testes. |
+| [Node.js 22 ou superior](https://nodejs.org/en/download) e npm | Versão no navegador, testes e geração do pacote desktop. O executável pronto não precisa de Node.js. |
 | Navegador moderno com Web Audio e IndexedDB | Interface, reprodução e armazenamento da biblioteca. |
 | Internet durante a instalação do motor | Baixar Python, pacotes e modelos, quando ainda não estiverem no computador. |
 | Alguns GB livres em disco | Python, PyTorch, modelos e faixas geradas. |
 
 Para usar apenas a biblioteca, o player e a exportação WAV, basta instalar Node.js. O motor de separação é opcional.
 
-## Instalação no Windows
+## Versão desktop para Windows
+
+O pacote portátil contém **Josue App.exe** com ícone próprio. Extraia o ZIP gerado pelo build e abra `JosueApp-win32-x64\Josue App.exe`. Mantenha os arquivos da pasta juntos; o executável usa as bibliotecas em `resources/`. Não é preciso instalar Node.js nem Python para usar a biblioteca, o player e a exportação WAV.
+
+Para instalar a separação por instrumentos na versão desktop, abra o PowerShell na pasta extraída e execute:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File '.\Instalar motor.ps1'
+```
+
+O script instala Python 3.11, PyTorch, Demucs, FFmpeg e os modelos em `%LOCALAPPDATA%\JosueApp\engine`. É necessário ter internet e alguns GB livres. Feche e reabra o aplicativo após a conclusão. O arquivo `Instalar motor.ps1` precisa continuar ao lado de `Josue App.exe`.
+
+Os projetos da versão desktop são salvos no perfil do Electron em `%LOCALAPPDATA%\JosueApp`. A biblioteca do navegador anterior continua no navegador e não aparece automaticamente no desktop; importe novamente os arquivos originais se quiser usá-los lá. A versão desktop usa a porta `4174` internamente. Feche qualquer servidor de desenvolvimento nessa porta antes de abri-la.
+
+### Gerar o executável a partir do código
+
+Em um Windows com Node.js 22+ e PowerShell, execute na raiz do repositório:
+
+```powershell
+npm run build:desktop
+```
+
+O script baixa o Electron da distribuição oficial se ainda não estiver em `.desktop-cache/`, confere seu SHA-256, inclui somente os arquivos necessários do aplicativo e aplica `desktop/icon.ico` ao executável. A saída fica em `dist/JosueApp-win32-x64/Josue App.exe`, junto com um ZIP de distribuição em `dist/JosueApp-windows-x64.zip`. Para alterar o ícone antes do build, edite `tools/make-icon.py` e execute `python tools/make-icon.py`.
+
+O executável não é assinado digitalmente. O Windows pode exibir um aviso de editor desconhecido ao abrir um build local; uma distribuição pública assinada exigiria um certificado de assinatura de código.
+
+## Versão no navegador (Windows)
 
 1. Instale o Node.js e confirme no PowerShell:
 
@@ -126,4 +152,3 @@ Issues e pull requests são bem-vindos. Para desenvolver, crie uma branch, faça
 ## Licença
 
 O código deste repositório é distribuído sob a [licença MIT](LICENSE). Demucs, PyTorch, FFmpeg e outros componentes baixados na instalação mantêm suas próprias licenças; consulte os projetos correspondentes antes de redistribuir seus binários ou modelos.
-

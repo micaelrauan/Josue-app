@@ -5,10 +5,10 @@ import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 const labels = { vocals: 'Vocais', drums: 'Bateria', bass: 'Baixo', guitar: 'Guitarra', piano: 'Piano', other: 'Outros instrumentos' };
-export function createSeparationService({ dataRoot = resolve('.data/separations'), python = process.env.SEPARATION_PYTHON || resolve('.venv/Scripts/python.exe'), worker = resolve('tools/separate_audio.py'), launch = spawn } = {}) {
+export function createSeparationService({ dataRoot = resolve('.data/separations'), python = process.env.SEPARATION_PYTHON || resolve('.venv/Scripts/python.exe'), worker = resolve('tools/separate_audio.py'), modelsRoot = resolve('.models'), launch = spawn } = {}) {
   const jobs = new Map();
   let active = false;
-  const env = { ...process.env, PYTHONUTF8: '1', TORCH_HOME: resolve('.models') };
+  const env = { ...process.env, PYTHONUTF8: '1', TORCH_HOME: modelsRoot };
   function json(res, code, body) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); }
   async function readiness() {
     try { await access(python); } catch { return { available: false, message: 'Instale o motor de separação: execute npm run setup:separation no terminal e reinicie o servidor.' }; }

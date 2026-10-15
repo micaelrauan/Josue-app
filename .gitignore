@@ -4,6 +4,8 @@
 .data/
 .edge-check/
 .impeccable/
+.desktop-cache/
+dist/
 node_modules/
 *.log
 .env

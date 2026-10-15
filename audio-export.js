@@ -3,12 +3,12 @@ import { readdir, mkdir, writeFile, readFile, unlink, rmdir } from 'node:fs/prom
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-export function createAudioExportService({launch=spawn,ffmpegPath,root=resolve('.data/exports')}={}){
+export function createAudioExportService({launch=spawn,ffmpegPath,root=resolve('.data/exports'),venvRoot=resolve('.venv')}={}){
   let busy=false;
   const json=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));};
   async function executable(){
     if(ffmpegPath)return ffmpegPath;
-    const directory=resolve('.venv/Lib/site-packages/imageio_ffmpeg/binaries');
+    const directory=join(venvRoot,'Lib','site-packages','imageio_ffmpeg','binaries');
     const names=await readdir(directory).catch(()=>[]);const name=names.find(n=>/^ffmpeg.*\.exe$/i.test(n));return name?join(directory,name):null;
   }
   function run(path,args,timeout){

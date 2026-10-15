@@ -1,10 +1,17 @@
+param(
+    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$InstallRoot = $ProjectRoot
+)
+
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$projectPath = Split-Path -Parent $PSScriptRoot
+$projectPath = [System.IO.Path]::GetFullPath($ProjectRoot)
+$installPath = [System.IO.Path]::GetFullPath($InstallRoot)
+New-Item -ItemType Directory -Force -Path $installPath | Out-Null
 Set-Location -LiteralPath $projectPath
 
 # Python 3.11 is compatible with the PyTorch versions supported by Demucs 4.
-$pythonPath = Join-Path $projectPath '.runtime\python311\python.exe'
+$pythonPath = Join-Path $installPath '.runtime\python311\python.exe'
 if (-not (Test-Path -LiteralPath $pythonPath)) {
     $existingPython = $null
     try {
@@ -14,7 +21,7 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
     if ($existingPython) {
         $pythonPath = $existingPython.Trim()
     } else {
-        $runtimePath = Join-Path $projectPath '.runtime'
+        $runtimePath = Join-Path $installPath '.runtime'
         New-Item -ItemType Directory -Force -Path $runtimePath | Out-Null
         $installerPath = Join-Path $runtimePath 'python-3.11.9-amd64.exe'
         Write-Host 'Baixando Python 3.11 do site oficial...'
@@ -30,16 +37,17 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
 }
 
 Write-Host 'Preparando ambiente local de separação...'
-& $pythonPath -m venv .venv
+$venvPath = Join-Path $installPath '.venv'
+& $pythonPath -m venv $venvPath
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar o ambiente Python.' }
-$venvPython = Join-Path $projectPath '.venv\Scripts\python.exe'
+$venvPython = Join-Path $venvPath 'Scripts\python.exe'
 & $venvPython -m pip install --upgrade pip
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao preparar pip. Verifique sua conexão.' }
 & $venvPython -m pip install 'torch==2.0.1' 'torchaudio==2.0.2' --index-url https://download.pytorch.org/whl/cpu
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar PyTorch.' }
 & $venvPython -m pip install 'numpy<2' 'demucs==4.0.1' soundfile imageio-ffmpeg
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar Demucs.' }
-$env:TORCH_HOME = Join-Path $projectPath '.models'
-& $venvPython tools/separate_audio.py --download-models
+$env:TORCH_HOME = Join-Path $installPath '.models'
+& $venvPython (Join-Path $projectPath 'tools\separate_audio.py') --download-models
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao baixar modelos. Execute este comando novamente para tentar outra vez.' }
-Write-Host 'Motor instalado. Reinicie npm run dev e abra o endereço mostrado no terminal.' -ForegroundColor Green
+Write-Host 'Motor instalado. Reinicie o Josué App ou npm run dev.' -ForegroundColor Green
