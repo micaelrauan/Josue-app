@@ -24,8 +24,10 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
         $runtimePath = Join-Path $installPath '.runtime'
         New-Item -ItemType Directory -Force -Path $runtimePath | Out-Null
         $installerPath = Join-Path $runtimePath 'python-3.11.9-amd64.exe'
-        Write-Host 'Baixando Python 3.11 do site oficial...'
-        Invoke-WebRequest 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile $installerPath
+        if (-not (Test-Path -LiteralPath $installerPath)) {
+            Write-Host 'Baixando Python 3.11 do site oficial...'
+            Invoke-WebRequest 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile $installerPath
+        }
         $signature = Get-AuthenticodeSignature -LiteralPath $installerPath
         if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Python Software Foundation') {
             throw 'A assinatura do instalador do Python não pôde ser validada.'
@@ -50,4 +52,4 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar Demucs.' }
 $env:TORCH_HOME = Join-Path $installPath '.models'
 & $venvPython (Join-Path $projectPath 'tools\separate_audio.py') --download-models
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao baixar modelos. Execute este comando novamente para tentar outra vez.' }
-Write-Host 'Motor instalado. Reinicie o Josué App ou npm run dev.' -ForegroundColor Green
+Write-Host 'Motor instalado. Reinicie o Josué App.' -ForegroundColor Green
