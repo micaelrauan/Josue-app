@@ -1,154 +1,99 @@
 # Josué App
 
-Aplicativo **open source** para Windows e navegador local: organiza músicas, reproduz e mixa faixas e separa vocais e instrumentos no próprio computador. O servidor escuta apenas em `127.0.0.1`; não é necessário criar conta.
+Aplicativo desktop **open source** para Windows. Organize músicas em uma biblioteca local, reproduza e mixe faixas no Studio e, com o motor opcional instalado, separe vocais e instrumentos no próprio computador. Não é necessário criar uma conta.
 
-O projeto é independente e não é afiliado ao Moises. A separação usa o [Demucs 4](https://github.com/facebookresearch/demucs), com modelos baixados durante a instalação. Transcrição automática de letra, identificação automática de acordes e os modelos proprietários de outros serviços não fazem parte deste aplicativo.
+O projeto é independente e não é afiliado ao Moises. A separação usa [Demucs 4](https://github.com/facebookresearch/demucs). Transcrição automática de letras, reconhecimento automático de acordes e modelos proprietários de outros serviços não estão incluídos.
 
-## O que o aplicativo faz
+## Recursos
 
-- Importa arquivos de áudio para uma biblioteca local no navegador.
-- Reproduz faixas em um Studio com formas de onda, volume, panorama, mute, solo, velocidade, tom, metrônomo e repetição de trechos.
-- Separa a música em 4 canais (vocais, bateria, baixo e outros) ou 6 canais (inclui guitarra e piano, modelo experimental).
-- Permite adicionar faixas, letras, acordes com marcação de tempo, seções e setlists manualmente.
-- Exporta canais e mixagem em WAV. MP3 e M4A ficam disponíveis quando o motor local e o FFmpeg estiverem instalados.
+- Biblioteca de músicas importadas do computador.
+- Studio com formas de onda, volume, panorama, mute, solo, velocidade, tom, metrônomo e repetição de trechos.
+- Separação opcional em 4 canais (vocais, bateria, baixo e outros) ou 6 canais (acrescenta guitarra e piano; modelo experimental).
+- Letras, acordes com marcação de tempo, seções e setlists adicionados manualmente.
+- Exportação de canais e da mixagem em WAV. MP3 e M4A ficam disponíveis com o motor local e FFmpeg instalados.
 
-## Requisitos
+## Instalar o aplicativo pronto
 
-| Item | Necessário para |
-| --- | --- |
-| Windows 10/11, 64 bits | Instalação automatizada do motor de separação; os scripts atuais usam caminhos do Windows. |
-| [Node.js 22 ou superior](https://nodejs.org/en/download) e npm | Versão no navegador, testes e geração do pacote desktop. O executável pronto não precisa de Node.js. |
-| Navegador moderno com Web Audio e IndexedDB | Interface, reprodução e armazenamento da biblioteca. |
-| Internet durante a instalação do motor | Baixar Python, pacotes e modelos, quando ainda não estiverem no computador. |
-| Alguns GB livres em disco | Python, PyTorch, modelos e faixas geradas. |
+1. Baixe `JosueApp-windows-x64.zip` na seção **Releases** do repositório, quando houver uma versão publicada. Se estiver trabalhando com uma cópia do projeto já compilada, use `dist/JosueApp-windows-x64.zip`.
+2. Extraia o ZIP inteiro para uma pasta de sua escolha. Mantenha os arquivos e a pasta `resources` juntos.
+3. Abra `JosueApp-win32-x64\Josue App.exe`. O aplicativo é portátil: não há instalador nem é necessário instalar Node.js para executar o player, a biblioteca e a exportação WAV.
 
-Para usar apenas a biblioteca, o player e a exportação WAV, basta instalar Node.js. O motor de separação é opcional.
+**Requisitos:** Windows 10 ou 11 de 64 bits e espaço para os arquivos de música. O executável não tem assinatura digital; o Windows pode pedir confirmação ao abrir um build local.
 
-## Versão desktop para Windows
+O aplicativo usa `127.0.0.1:4174` somente para comunicar sua janela com o serviço local. Se essa porta estiver ocupada, feche o processo que a utiliza e abra o aplicativo novamente. A interface permanece dentro da janela do aplicativo.
 
-O pacote portátil contém **Josue App.exe** com ícone próprio. Extraia o ZIP gerado pelo build e abra `JosueApp-win32-x64\Josue App.exe`. Mantenha os arquivos da pasta juntos; o executável usa as bibliotecas em `resources/`. Não é preciso instalar Node.js nem Python para usar a biblioteca, o player e a exportação WAV.
+### Instalar o motor de separação (opcional)
 
-Para instalar a separação por instrumentos na versão desktop, abra o PowerShell na pasta extraída e execute:
+1. Conecte-se à internet e reserve alguns GB livres para Python, PyTorch, FFmpeg e os modelos.
+2. Abra o PowerShell na pasta extraída, onde estão `Josue App.exe` e `Instalar motor.ps1`.
+3. Execute:
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File '.\Instalar motor.ps1'
-```
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File '.\Instalar motor.ps1'
+   ```
 
-O script instala Python 3.11, PyTorch, Demucs, FFmpeg e os modelos em `%LOCALAPPDATA%\JosueApp\engine`. É necessário ter internet e alguns GB livres. Feche e reabra o aplicativo após a conclusão. O arquivo `Instalar motor.ps1` precisa continuar ao lado de `Josue App.exe`.
+4. Aguarde a instalação terminar e feche e abra o aplicativo novamente.
 
-Os projetos da versão desktop são salvos no perfil do Electron em `%LOCALAPPDATA%\JosueApp`. A biblioteca do navegador anterior continua no navegador e não aparece automaticamente no desktop; importe novamente os arquivos originais se quiser usá-los lá. A versão desktop usa a porta `4174` internamente. Feche qualquer servidor de desenvolvimento nessa porta antes de abri-la.
+O motor é instalado em `%LOCALAPPDATA%\JosueApp\engine`. A separação de uma música em CPU pode demorar mais que a duração do áudio. O modelo de 6 canais é experimental e pode misturar partes de instrumentos. O limite por arquivo enviado para separação é de **250 MB** e **20 minutos**.
 
-### Gerar o executável a partir do código
+## Compilar a partir do código
 
-Em um Windows com Node.js 22+ e PowerShell, execute na raiz do repositório:
+No Windows 10/11 de 64 bits, instale [Node.js 22 ou superior](https://nodejs.org/en/download) e Git. Depois, abra o PowerShell e execute:
 
 ```powershell
+git clone https://github.com/micaelrauan/Josue-app.git
+cd Josue-app
 npm run build:desktop
 ```
 
-O script baixa o Electron da distribuição oficial se ainda não estiver em `.desktop-cache/`, confere seu SHA-256, inclui somente os arquivos necessários do aplicativo e aplica `desktop/icon.ico` ao executável. A saída fica em `dist/JosueApp-win32-x64/Josue App.exe`, junto com um ZIP de distribuição em `dist/JosueApp-windows-x64.zip`. Para alterar o ícone antes do build, edite `tools/make-icon.py` e execute `python tools/make-icon.py`.
+Também é possível baixar o código pelo botão **Code → Download ZIP** no GitHub, extrair e executar `npm run build:desktop` dentro da pasta. Não há dependências npm de produção para instalar antes do build.
 
-O executável não é assinado digitalmente. O Windows pode exibir um aviso de editor desconhecido ao abrir um build local; uma distribuição pública assinada exigiria um certificado de assinatura de código.
+O script obtém o pacote oficial do Electron quando necessário, confere seu SHA-256 e gera:
 
-## Versão no navegador (Windows)
+| Arquivo | Uso |
+| --- | --- |
+| `dist/JosueApp-win32-x64/Josue App.exe` | Executável portátil com ícone próprio. |
+| `dist/JosueApp-windows-x64.zip` | Pacote completo para distribuir ou copiar para outro computador. |
 
-1. Instale o Node.js e confirme no PowerShell:
+Para modificar o ícone, edite `tools/make-icon.py`, execute `python tools/make-icon.py` e compile novamente. O Python só é necessário para gerar o ícone ou instalar o motor, não para compilar o executável padrão.
 
-   ```powershell
-   node --version
-   npm --version
-   ```
+## Usar o Studio
 
-2. Clone o repositório e entre na pasta:
+1. Abra **Play** ou **Studio** e importe um arquivo de áudio.
+2. Clique na música para abrir o Studio e aguarde as formas de onda carregarem.
+3. Ajuste os canais. Se instalou o motor, use **Mais opções → Separar instrumentos** e escolha 4 ou 6 canais.
+4. Registre letra, acordes e seções. Letras no formato LRC aceitam marcas como `[00:12.00] Texto da linha`.
+5. Use **Exportar** para salvar os canais ou a mixagem. WAV funciona sem o motor.
 
-   ```powershell
-   git clone https://github.com/micaelrauan/Josue-app.git
-   cd Josue-app
-   ```
+A reprodução depende dos formatos de áudio compatíveis com o Chromium incluído no aplicativo. O motor usa FFmpeg durante a separação.
 
-   Se não tiver Git, baixe o ZIP pelo botão **Code → Download ZIP** no GitHub, extraia e abra o PowerShell na pasta extraída.
+## Arquivos e privacidade
 
-3. Inicie o servidor:
+A biblioteca, os ajustes e os projetos ficam no perfil local do aplicativo em `%LOCALAPPDATA%\JosueApp`. Os arquivos temporários e resultados da separação ficam em `%LOCALAPPDATA%\JosueApp\data`; o motor opcional fica em `%LOCALAPPDATA%\JosueApp\engine`. Faça backup dessa pasta se precisar preservar seus projetos.
 
-   ```powershell
-   npm run dev
-   ```
+Os dados de instalações anteriores no navegador não são importados automaticamente para o desktop. Importe os arquivos de áudio originais no aplicativo. O aplicativo não exige conta e o serviço local escuta apenas em `127.0.0.1`.
 
-4. Abra **http://127.0.0.1:4174** no navegador. Mantenha o terminal aberto enquanto usa o aplicativo. Para encerrar, pressione `Ctrl+C`.
+## Resolver problemas
 
-Este projeto não tem dependências npm de produção; por isso, `npm install` não é necessário para iniciar a interface. A primeira importação deve ser feita pelo botão de upload da biblioteca.
+| Sintoma | O que fazer |
+| --- | --- |
+| O aplicativo avisa que a porta 4174 está ocupada | Feche outro processo que use essa porta e abra `Josue App.exe` novamente. |
+| A biblioteca está vazia | Confira se está usando o mesmo perfil do Windows e se `%LOCALAPPDATA%\JosueApp` não foi apagado. Importe novamente os arquivos originais, se necessário. |
+| O áudio não abre no Studio | Experimente um MP3 ou WAV válido e aguarde a importação terminar. |
+| O motor não está disponível | Execute `Instalar motor.ps1` na pasta do aplicativo, aguarde o fim e reinicie o aplicativo. Confira a internet e o espaço livre. |
+| MP3/M4A indisponíveis para exportar | Instale o motor para obter FFmpeg. WAV continua disponível. |
+| A separação falhou | Confira o arquivo e os limites de 250 MB/20 minutos. Procure detalhes em `%LOCALAPPDATA%\JosueApp\data\separations\<id>\error.log`. |
 
-### Instalar a separação por instrumentos
-
-No PowerShell, dentro da pasta do projeto, execute:
-
-```powershell
-npm run setup:separation
-```
-
-O script procura Python 3.11. Se não encontrar, baixa o instalador oficial para `.runtime/` e valida sua assinatura antes de executá-lo. Em seguida cria `.venv/`, instala PyTorch para CPU, Demucs, FFmpeg via `imageio-ffmpeg` e baixa os modelos para `.models/`. Isso pode levar vários minutos e baixar alguns GB. Feche o servidor com `Ctrl+C` e inicie `npm run dev` novamente após a instalação.
-
-O modelo de 4 canais é o padrão. O de 6 canais é experimental e pode apresentar vazamento entre instrumentos. Em CPU, o processamento pode demorar mais que a duração da música. Cada arquivo enviado para separação tem limite de **250 MB** e **20 minutos**.
-
-### Testar a instalação
+## Desenvolver e contribuir
 
 ```powershell
 npm test
 ```
 
-Os testes automatizados cobrem as APIs locais, reprodução e mixagem, formas de onda e exportação com processos simulados. Eles não executam a inferência real do Demucs. Para verificar o motor, importe uma música, abra o Studio, use **Mais opções → Separar instrumentos** e acompanhe o andamento.
+Os testes cobrem o serviço local e partes do Studio, usando processos simulados para a separação. Eles não executam a inferência real do Demucs. Para contribuir, abra uma issue ou pull request e execute os testes antes de enviar alterações. Não inclua músicas pessoais, modelos baixados ou ambientes virtuais nos commits.
 
-## Como usar
-
-1. Abra **Play** ou **Studio** e importe um arquivo de áudio. A aceitação do formato depende dos codecs suportados pelo navegador; o motor local usa FFmpeg para a separação.
-2. Clique na música para abrir o Studio. Aguarde as formas de onda terminarem de carregar.
-3. Ajuste os canais e o transporte. No menu **Mais opções**, escolha **Separar instrumentos** e selecione 4 ou 6 faixas, se instalou o motor.
-4. Use **Letra**, **Acordes** e **Seções** para registrar informações manualmente. Letras no formato LRC usam marcas como `[00:12.00] Texto da linha`.
-5. Use **Exportar** para baixar canais ou a mixagem. WAV funciona sem o motor; MP3 e M4A exigem FFmpeg instalado pelo script acima.
-
-## Onde os dados ficam
-
-- Os projetos importados, os arquivos de áudio e os ajustes do Studio ficam no **IndexedDB do navegador**. Setlists ficam no armazenamento local do mesmo navegador.
-- Os arquivos temporários e resultados da separação ficam em `.data/` no computador. Os resultados também são copiados para o projeto no navegador quando o processamento termina.
-- `.venv/`, `.runtime/`, `.models/` e `.data/` são ignorados pelo Git e **não** são enviados ao GitHub.
-- A biblioteca está vinculada ao endereço exato usado na importação. `127.0.0.1:4174`, `localhost:4174` e portas diferentes têm armazenamentos separados. Use sempre o mesmo navegador, host e porta. Limpar os dados do site no navegador também remove os projetos salvos nele.
-- O servidor escuta apenas em `127.0.0.1` e não oferece autenticação ou hospedagem pública. GitHub Pages sozinho não executa o servidor Node nem a separação.
-
-Se quiser usar outra porta, defina `PORT` antes de iniciar. Por exemplo, no PowerShell:
-
-```powershell
-$env:PORT = '4180'
-npm run dev
-```
-
-Use a mesma porta nas próximas sessões para ver a mesma biblioteca. Se a porta estiver ocupada, o servidor informa o erro em vez de mudar de porta automaticamente.
-
-## Solução de problemas
-
-| Sintoma | O que verificar |
-| --- | --- |
-| A biblioteca está vazia | Confirme o mesmo navegador, host e porta usados na importação. Confira também se os dados do site não foram apagados. |
-| A porta 4174 já está em uso | Abra a instância existente em `http://127.0.0.1:4174` ou encerre o processo anterior antes de reiniciar. |
-| O áudio não carrega no Studio | Experimente WAV ou MP3 compatível com o navegador. Arquivos corrompidos ou codecs não suportados aparecem como erro na faixa. |
-| O motor não está disponível | Execute `npm run setup:separation`, aguarde o fim e reinicie o servidor. Confira espaço livre e conexão durante o download. |
-| MP3/M4A indisponíveis | Instale o motor local para obter FFmpeg e reinicie o servidor. WAV continua disponível. |
-| A separação falhou | Verifique o arquivo, o limite de 250 MB/20 minutos e os detalhes em `.data/separations/<id>/error.log`. |
-
-## Estrutura do projeto
-
-| Caminho | Finalidade |
-| --- | --- |
-| `server.js` | Servidor HTTP local e arquivos da interface. |
-| `public/` | Interface, biblioteca, Studio e áudio no navegador. |
-| `separation.js` e `tools/separate_audio.py` | API local e execução do Demucs. |
-| `audio-export.js` | Conversão opcional para MP3/M4A. |
-| `tools/setup-separation.ps1` | Instalação do motor no Windows. |
-| `test/` | Testes automatizados executados por `npm test`. |
-
-## Contribuir
-
-Issues e pull requests são bem-vindos. Para desenvolver, crie uma branch, faça as alterações e execute `npm test` antes de enviar o pull request. Não inclua músicas pessoais, modelos baixados, ambientes virtuais ou arquivos de `.data/` nos commits.
+`desktop/` contém a janela e os ícones; `public/` contém a interface exibida **dentro** do aplicativo desktop; `server.js`, `separation.js` e `audio-export.js` atendem a essa interface localmente; `tools/` contém scripts de build e do motor; `test/` contém os testes. A pasta `public/` faz parte do executável e é necessária para ele funcionar.
 
 ## Licença
 
-O código deste repositório é distribuído sob a [licença MIT](LICENSE). Demucs, PyTorch, FFmpeg e outros componentes baixados na instalação mantêm suas próprias licenças; consulte os projetos correspondentes antes de redistribuir seus binários ou modelos.
+O código é distribuído sob a [licença MIT](LICENSE). Demucs, PyTorch, FFmpeg e outros componentes obtidos na instalação têm licenças próprias; consulte os respectivos projetos antes de redistribuir seus binários ou modelos.

@@ -7,7 +7,6 @@ import { createAudioExportService } from './audio-export.js';
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
-const port = Number(process.env.PORT || 4174);
 
 export function createAppServer({ root = join(projectRoot, 'public'), dataRoot = resolve('.data'), venvRoot = resolve('.venv'), modelsRoot = resolve('.models'), python = process.env.SEPARATION_PYTHON || join(venvRoot, 'Scripts', 'python.exe') } = {}) {
 const separation = createSeparationService({ dataRoot: join(dataRoot, 'separations'), python, worker: join(projectRoot, 'tools', 'separate_audio.py'), modelsRoot });
@@ -34,18 +33,3 @@ return createServer(async (req, res) => {
 });
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-const server = createAppServer();
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`A porta ${port} já está em uso. Abra http://127.0.0.1:${port} no navegador ou encerre o servidor anterior antes de iniciar outro. As músicas salvas no navegador pertencem ao endereço exato em que foram importadas.`);
-    process.exitCode = 1;
-    return;
-  }
-  console.error(`Não foi possível iniciar o servidor: ${error.message}`);
-  process.exitCode = 1;
-});
-
-server.on('listening', () => console.log(`Josué App: http://127.0.0.1:${server.address().port}`));
-server.listen(port, '127.0.0.1');
-}

@@ -14,4 +14,3 @@ node_modules/
 Thumbs.db
 __pycache__/
 *.py[cod]
-tools/inspect_asar.py
