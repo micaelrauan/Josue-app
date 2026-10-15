@@ -1,0 +1,15 @@
+{
+  "name": "josue-app",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "setup:separation": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup-separation.ps1",
+    "test": "node test/run.js"
+  }
+}

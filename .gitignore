@@ -1,0 +1,15 @@
+.venv/
+.runtime/
+.models/
+.data/
+.edge-check/
+.impeccable/
+node_modules/
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
+__pycache__/
+*.py[cod]
+tools/inspect_asar.py

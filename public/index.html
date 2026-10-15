@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#101113" />
+  <title>Josué App</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/studio.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="titlebar"><span class="titlebar-tab"><span class="tab-home">⌂</span> Home</span><span class="titlebar-plus">+</span><span class="titlebar-name">Josué App</span></div>
+    <aside class="sidebar" aria-label="Navegação principal">
+      <div class="brand"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div><strong>josué</strong></div>
+      <nav id="main-nav">
+        <button data-page="home" class="nav-item active"><span class="nav-icon" data-icon="home"></span>Início</button>
+        <div class="nav-label">PRODUTOS</div>
+        <button data-page="play" class="nav-item"><span class="nav-icon" data-icon="play"></span>Play</button>
+        <button data-page="studio" class="nav-item"><span class="nav-icon" data-icon="studio"></span>Studio<span class="new-tag">New</span></button>
+        <button data-page="mastering" class="nav-item"><span class="nav-icon" data-icon="mastering"></span>Masterização</button>
+        <button data-page="voice" class="nav-item"><span class="nav-icon" data-icon="voice"></span>Voice Studio</button>
+        <button data-page="lyrics" class="nav-item"><span class="nav-icon" data-icon="lyrics"></span>Lyric Writer</button>
+        <div class="nav-label setlist-label">SETLISTS</div>
+        <button id="new-setlist" class="nav-item"><span class="nav-icon accent" data-icon="plus"></span>Nova setlist</button>
+        <div id="setlist-nav"></div>
+      </nav>
+      <div class="sidebar-bottom"><button data-page="downloads" class="nav-item"><span class="nav-icon" data-icon="download"></span>Downloads</button><div class="profile"><div class="avatar">M</div><div><strong>Meu espaço</strong><small>Local</small></div><span class="profile-more">⋮</span></div></div>
+    </aside>
+    <main id="view" tabindex="-1"></main>
+  </div>
+  <input id="audio-input" type="file" accept="audio/*,.mp3,.wav,.flac,.m4a,.wma" multiple hidden />
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

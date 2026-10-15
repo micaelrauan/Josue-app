@@ -1,0 +1,37 @@
+const paths = {
+  tempo: '<path d="m5 20 5-17h4l5 17zM8 15l8-10M8 17h8"/>',
+  key: '<path d="M4 7h16M4 12h16M4 17h16M9 3v14m6-10v14"/>',
+  count: '<path d="M6 4h2v6m-2 0h4m4-5c0-2 4-2 4 0 0 2-4 3-4 5h4M5 15h4l-2 2c4 0 3 5-1 4m10-7-2 5h5m-2-4v7"/>',
+  more: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+  rewind: '<path d="m12 6-9 6 9 6V6Zm9 0-9 6 9 6V6Z"/>',
+  forward: '<path d="m3 6 9 6-9 6V6Zm9 0 9 6-9 6V6Z"/>',
+  chevron: '<path d="m7 10 5 5 5-5"/>',
+  chords: '<path d="M5 3v18M12 3v18M19 3v18M3 6h18M3 12h18M3 18h18"/><circle cx="12" cy="12" r="2"/>',
+  sections: '<path d="M4 9h16v11H4zM12 3v11m-4-4 4 4 4-4"/>',
+  home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+  play: '<path d="M4 5h8M4 9h12M4 13h8M4 17h12M4 21h8"/>',
+  studio: '<path d="M3 12h2m2-5v10m3-14v18m3-12v6m3-10v14m3-7h2"/>',
+  mastering: '<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M12 6h.01"/>',
+  voice: '<circle cx="12" cy="8" r="3"/><path d="M5 20v-2a7 7 0 0 1 14 0v2M19 6a3 3 0 0 1 0 6M21 20v-2a5 5 0 0 0-2-4"/>',
+  lyrics: '<path d="M4 5h16v13H9l-5 3zM8 10h8M8 14h5"/>',
+  plus: '<path d="M12 4v16M4 12h16"/>',
+  download: '<path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/>',
+  filter: '<path d="M4 6h16M7 12h10m-7 6h4"/>',
+  sort: '<path d="M8 4v16m-3-3 3 3 3-3M16 20V4m-3 3 3-3 3 3"/>',
+  music: '<path d="M9 18V5l11-2v13M9 18a3 2 0 1 1-6 0 3 2 0 0 1 6 0Zm11-2a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z"/>',
+  pause: '<path d="M8 5v14M16 5v14"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="1"/>',
+  triangle: '<path d="m8 5 11 7-11 7z"/>',
+  back: '<path d="m14 5-7 7 7 7"/>',
+  loop: '<path d="M5 8V6a2 2 0 0 1 2-2h11l3 3-3 3M19 16v2a2 2 0 0 1-2 2H6l-3-3 3-3"/>',
+  volume: '<path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6M20 6a8 8 0 0 1 0 12"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6"/>',
+  close: '<path d="M5 5l14 14M19 5 5 19"/>',
+  check: '<path d="m4 12 5 5L20 6"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+};
+
+export function icon(name, size = 20) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.music}</svg>`;
+}
