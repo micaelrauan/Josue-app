@@ -7,6 +7,9 @@ const audioInput = document.querySelector('#audio-input');
 const nav = document.querySelector('#main-nav');
 const toast = document.querySelector('#toast');
 const state = { page: 'home', tracks: [], setlists: [], selectedSetlist: null, current: null, query: '', sort: 'newest', player: null };
+const separationQueue = [];
+let processingQueue = false;
+let importingYoutube = false;
 const products = [
   { page: 'play', title: 'Play', description: 'Aprenda, pratique e organize suas músicas.', color: '#2ee6ef', icon: 'play' },
   { page: 'studio', title: 'Studio', description: 'Trabalhe com áudio e faixas em um só lugar.', color: '#48d7a1', icon: 'studio' },
@@ -63,7 +66,7 @@ function trackRows(tracks) {
 function filteredTracks(ids = null) { let items = state.tracks.filter(track => (!ids || ids.includes(track.id)) && track.name.toLocaleLowerCase().includes(state.query.toLocaleLowerCase())); return items.sort((a,b) => state.sort === 'name' ? a.name.localeCompare(b.name) : b.created - a.created); }
 function home() { return `<div class="page home-page"><div class="product-strip">${products.map(p => `<button class="product-card" data-page="${p.page}" style="--art-color:${p.color}"><div class="card-art"><span class="art-lines"></span><span class="art-icon">${icon(p.icon,88)}</span></div><div class="product-content"><div class="small-icon">${icon(p.icon,21)}</div><strong>${p.title}</strong><p>${p.description}</p></div></button>`).join('')}</div><div class="section-head"><h2>Arquivos</h2>${toolbar()}</div>${state.tracks.length ? trackRows(filteredTracks()) : '<div class="empty-box"><strong>Você ainda não tem arquivos!</strong><p>Comece com uma música do seu computador. Seus arquivos ficam salvos somente neste navegador.</p><button class="primary" data-action="upload">' + icon('plus',18) + ' Iniciar um projeto</button></div>'}</div>`; }
 function play() { if (!state.tracks.length) return `<div class="page"><div class="play-empty"><h1>Faça upload da sua primeira música</h1><p>Reproduza, pratique junto e organize suas músicas em um só lugar.</p><button class="primary" data-action="upload">${icon('plus',18)} Fazer upload de música</button></div></div>`; return `<div class="page"><div class="page-heading"><div><h1>Biblioteca</h1><p>Suas músicas salvas neste navegador</p></div><button class="primary" data-action="upload">${icon('plus',18)} Nova música</button></div><div class="section-head"><h2>Músicas</h2>${toolbar()}</div>${trackRows(filteredTracks())}</div>`; }
-function upload() { return `<div class="page upload-page"><h1>Separar faixas por instrumentos</h1><p>Escolha uma música. No Studio, selecione 4 ou 6 faixas e clique em Separar instrumentos.</p><div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Selecionar arquivos de áudio"><span class="drop-plus">${icon('plus',22)}</span><span class="drop-copy"><strong>Solte ou selecione sua música aqui</strong><small>MP3, WAV, FLAC, M4A e outros · até 250 MB por música</small></span></div><p class="upload-explanation">4 faixas: vocais, bateria, baixo e outros instrumentos.<br>6 faixas: acrescenta guitarra e piano (experimental).<br>O áudio é processado neste computador. Em CPU, a separação pode levar vários minutos.</p></div>`; }
+function upload() { return `<div class="page upload-page"><h1>Adicionar música</h1><p>Escolha um arquivo ou cole o link de um vídeo do YouTube. Depois você decide se quer separar os instrumentos.</p><div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Selecionar arquivos de áudio"><span class="drop-plus">${icon('plus',22)}</span><span class="drop-copy"><strong>Solte ou selecione sua música aqui</strong><small>MP3, WAV, FLAC, M4A e outros · até 250 MB por música</small></span></div><form class="youtube-form" id="youtube-form"><label for="youtube-url">Link do YouTube</label><div class="youtube-fields"><input id="youtube-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://www.youtube.com/watch?v=..." required><button class="primary" type="submit" ${importingYoutube ? 'disabled' : ''}>${importingYoutube ? 'Importando...' : 'Importar link'}</button></div><small id="youtube-status" role="status" aria-live="polite">Vídeos de até 20 minutos e 250 MB. Use conteúdo que você tem permissão para baixar.</small></form><p class="upload-explanation">4 faixas: vocais, bateria, baixo e outros instrumentos.<br>6 faixas: acrescenta guitarra e piano (experimental).<br>O áudio é processado neste computador. Em CPU, a separação pode levar vários minutos.</p></div>`; }
 function studioHome() { return `<div class="page"><div class="page-heading"><div><h1>Studio</h1><p>Abra uma música para ajustar os instrumentos e visualizar as formas de onda.</p></div><button class="primary" data-action="upload">${icon('plus',17)} Nova música</button></div><div class="section-head"><h2>Seus projetos</h2>${toolbar()}</div>${trackRows(filteredTracks())}</div>`; }
 function setlist() { const list = state.setlists.find(item => item.id === state.selectedSetlist); if (!list) return '<div class="page">Setlist não encontrada.</div>'; return `<div class="page"><div class="setlist-header"><div><h1>${escapeHtml(list.name)}</h1><p class="track-meta">${list.trackIds.length} músicas</p></div><div class="setlist-actions"><button class="secondary" id="rename-setlist">Renomear</button><button class="secondary" id="delete-setlist">${icon('trash',16)} Excluir</button></div></div><div class="section-head"><h2>Músicas</h2>${toolbar()}</div>${trackRows(filteredTracks(list.trackIds))}</div>`; }
 function feature(title, lead, detail, action) { return `<div class="page feature-page"><h1>${title}</h1><p class="feature-lead">${lead}</p><div class="feature-panel"><h2>${detail}</h2><p>Use seus arquivos locais para continuar. Os recursos de IA do serviço original dependem da infraestrutura do Moises e não estão presentes nesta recriação.</p><button class="primary" data-action="${action}">${icon('plus',18)} ${action === 'upload' ? 'Adicionar música' : 'Abrir biblioteca'}</button></div></div>`; }
@@ -97,8 +100,76 @@ async function importFiles(files) {
   audioInput.value = '';
   showToast(`${valid.length} ${valid.length === 1 ? 'música importada' : 'músicas importadas'} com sucesso.`);
   await openPlayer(imported[0]);
+  await promptSeparation(imported);
 }
 audioInput.addEventListener('change', e => importFiles(e.target.files).catch(err => showToast(`Falha ao importar: ${err.message}`)));
+
+async function processSeparationQueue() {
+  if (processingQueue) return;
+  processingQueue = true;
+  try {
+    while (separationQueue.length) {
+      const { id, model } = separationQueue.shift();
+      const track = await getTrack(id);
+      if (track) await separateTrack(track, model);
+    }
+  } finally { processingQueue = false; }
+}
+
+function promptSeparation(ids) {
+  return new Promise(resolve => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'dialog-backdrop';
+    backdrop.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="separation-question"><h2 id="separation-question">Separar os instrumentos?</h2><p class="dialog-description">${ids.length === 1 ? 'Sua música foi adicionada. Deseja criar faixas separadas para voz e instrumentos?' : `${ids.length} músicas foram adicionadas. Deseja separar os instrumentos de todas elas?`}</p><label class="dialog-label" for="separation-choice">Faixas</label><select id="separation-choice"><option value="htdemucs">4 faixas: voz, bateria, baixo e outros</option><option value="htdemucs_6s">6 faixas: inclui guitarra e piano</option></select><div class="dialog-actions"><button type="button" class="secondary cancel">Agora não</button><button type="button" class="primary accept">Separar instrumentos</button></div></div>`;
+    document.body.append(backdrop);
+    const previous = document.activeElement;
+    const close = accepted => {
+      if (accepted) {
+        const model = backdrop.querySelector('select').value;
+        separationQueue.push(...ids.map(id => ({ id, model })));
+        processSeparationQueue().catch(error => showToast(error.message));
+      }
+      backdrop.remove();
+      previous?.focus?.();
+      resolve();
+    };
+    backdrop.querySelector('.cancel').onclick = () => close(false);
+    backdrop.querySelector('.accept').onclick = () => close(true);
+    backdrop.onkeydown = event => { if (event.key === 'Escape') close(false); };
+    backdrop.querySelector('.accept').focus();
+  });
+}
+
+async function importYoutube(form) {
+  if (importingYoutube) return;
+  importingYoutube = true;
+  const button = form.querySelector('button');
+  const status = form.querySelector('#youtube-status');
+  button.disabled = true;
+  button.textContent = 'Importando...';
+  status.textContent = 'Baixando o áudio. Isso pode levar alguns minutos.';
+  try {
+    const response = await fetch('/api/youtube/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: form.elements.url.value.trim() }) });
+    if (!response.ok) throw new Error((await response.json()).error || 'Não foi possível importar o link.');
+    const title = decodeURIComponent(response.headers.get('X-Track-Title') || 'Música do YouTube');
+    const extension = response.headers.get('X-Audio-Extension') || 'm4a';
+    const blob = await response.blob();
+    const file = new File([blob], `${title}.${extension}`, { type: blob.type });
+    const track = { id: crypto.randomUUID(), name: title, created: Date.now(), duration: null, lyrics: '', files: [{ name: 'Original', blob: file }] };
+    await saveTrack(track);
+    await refreshTracks();
+    showToast('Música importada com sucesso.');
+    await openPlayer(track.id);
+    await promptSeparation([track.id]);
+  } catch (error) {
+    status.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    importingYoutube = false;
+    button.disabled = false;
+    button.textContent = 'Importar link';
+  }
+}
 
 function modal(title, value, callback) {
   const backdrop = document.createElement('div'); backdrop.className = 'dialog-backdrop';
@@ -122,6 +193,7 @@ view.addEventListener('click', async e => {
   if (e.target.closest('#rename-setlist')) { const list = state.setlists.find(x => x.id === state.selectedSetlist); modal('Renomear setlist', list.name, name => { if (!name) return; list.name = name; saveSetlists(); updateNav(); render(); }); return; }
   if (e.target.closest('#delete-setlist')) { const list = state.setlists.find(x => x.id === state.selectedSetlist); if (confirm(`Excluir a setlist “${list.name}”? As músicas serão mantidas.`)) { state.setlists = state.setlists.filter(x => x.id !== list.id); saveSetlists(); go('play'); } return; }
 });
+view.addEventListener('submit', e => { if (e.target.id === 'youtube-form') { e.preventDefault(); importYoutube(e.target); } });
 view.addEventListener('input', e => { if (e.target.id === 'search') { const selection = e.target.selectionStart; state.query = e.target.value; render(); const next = document.querySelector('#search'); if (next) { next.focus(); next.setSelectionRange(selection, selection); } } });
 view.addEventListener('dragover', e => { if (e.target.closest('#dropzone')) { e.preventDefault(); e.target.closest('#dropzone').classList.add('dragging'); } });
 view.addEventListener('dragleave', e => e.target.closest('#dropzone')?.classList.remove('dragging'));

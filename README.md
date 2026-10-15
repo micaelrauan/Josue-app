@@ -6,16 +6,16 @@ O projeto é independente e não é afiliado ao Moises. A separação usa [Demuc
 
 ## Recursos
 
-- Biblioteca de músicas importadas do computador.
+- Biblioteca de músicas importadas do computador ou por link de vídeo do YouTube.
 - Studio com formas de onda, volume, panorama, mute, solo, velocidade, tom, metrônomo e repetição de trechos.
-- Separação opcional em 4 canais (vocais, bateria, baixo e outros) ou 6 canais (acrescenta guitarra e piano; modelo experimental).
+- Ao importar uma música, o aplicativo pergunta se você deseja separar os instrumentos. A separação opcional cria 4 canais (vocais, bateria, baixo e outros) ou 6 canais (acrescenta guitarra e piano; modelo experimental).
 - Letras, acordes com marcação de tempo, seções e setlists adicionados manualmente.
 - Exportação de canais e da mixagem em WAV. MP3 e M4A ficam disponíveis com o motor local e FFmpeg instalados.
 
 ## Instalar o aplicativo pronto
 
 1. Baixe `JosueApp-Setup.exe` na seção **Releases** do repositório, quando houver uma versão publicada. Num build local, use `dist/JosueApp-Setup.exe`.
-2. Abra o instalador e clique em **Instalar**. Ele copia o aplicativo para `%LOCALAPPDATA%\Programs\Josue App`, cria um atalho no menu Iniciar e, se solicitado, na área de trabalho. Depois baixa e prepara automaticamente Python, PyTorch, Demucs, FFmpeg e os modelos de separação.
+2. Abra o instalador e clique em **Instalar**. Ele copia o aplicativo para `%LOCALAPPDATA%\Programs\Josue App`, cria um atalho no menu Iniciar e, se solicitado, na área de trabalho. Depois baixa e prepara automaticamente Python, PyTorch, Demucs, FFmpeg, yt-dlp e os modelos de separação.
 3. Aguarde a mensagem **Instalação concluída** e clique em **Abrir app**. A etapa do motor exige internet, alguns GB livres e pode demorar vários minutos. Se falhar, clique em **Tentar de novo**; o diagnóstico fica em `%LOCALAPPDATA%\JosueApp\install.log`.
 
 Para remover o aplicativo, use **Desinstalar Josué App** nas configurações do Windows. Os projetos e o motor em `%LOCALAPPDATA%\JosueApp` são preservados para uma futura instalação.
@@ -60,11 +60,12 @@ Após gerar o instalador, `npm run clean:cache` remove as cópias temporárias d
 
 ## Usar o Studio
 
-1. Abra **Play** ou **Studio** e importe um arquivo de áudio.
-2. Clique na música para abrir o Studio e aguarde as formas de onda carregarem.
-3. Ajuste os canais. Se instalou o motor, use **Mais opções → Separar instrumentos** e escolha 4 ou 6 canais.
-4. Registre letra, acordes e seções. Letras no formato LRC aceitam marcas como `[00:12.00] Texto da linha`.
-5. Use **Exportar** para salvar os canais ou a mixagem. WAV funciona sem o motor.
+1. Abra **Play** ou **Studio** e importe um arquivo de áudio ou cole um link de vídeo do YouTube na tela **Adicionar música**. Links aceitam vídeos de até 20 minutos e 250 MB. Use conteúdo que você tem permissão para baixar.
+2. Após importar, escolha **Separar instrumentos** ou **Agora não**. Se escolher separar, selecione 4 ou 6 faixas; o processamento acontece em sequência quando você adiciona várias músicas.
+3. Clique na música para abrir o Studio e aguarde as formas de onda carregarem.
+4. Ajuste os canais. Você também pode iniciar ou refazer a separação no Studio.
+5. Registre letra, acordes e seções. Letras no formato LRC aceitam marcas como `[00:12.00] Texto da linha`.
+6. Use **Exportar** para salvar os canais ou a mixagem. WAV funciona sem o motor.
 
 A reprodução depende dos formatos de áudio compatíveis com o Chromium incluído no aplicativo. O motor usa FFmpeg durante a separação.
 
@@ -81,6 +82,7 @@ Os dados de instalações anteriores no navegador não são importados automatic
 | O aplicativo avisa que a porta 4174 está ocupada | Feche outro processo que use essa porta e abra `Josue App.exe` novamente. |
 | A biblioteca está vazia | Confira se está usando o mesmo perfil do Windows e se `%LOCALAPPDATA%\JosueApp` não foi apagado. Importe novamente os arquivos originais, se necessário. |
 | O áudio não abre no Studio | Experimente um MP3 ou WAV válido e aguarde a importação terminar. |
+| O link do YouTube não importa | Confira se é um vídeo público e disponível, dentro do limite de 20 minutos e 250 MB. Execute o instalador novamente para atualizar o importador local. |
 | O motor não está disponível | Execute o instalador novamente e aguarde o fim, ou use `Instalar motor.ps1` no pacote portátil. Confira a internet, o espaço livre e `%LOCALAPPDATA%\JosueApp\install.log`. |
 | MP3/M4A indisponíveis para exportar | Instale o motor para obter FFmpeg. WAV continua disponível. |
 | A separação falhou | Confira o arquivo e os limites de 250 MB/20 minutos. Procure detalhes em `%LOCALAPPDATA%\JosueApp\data\separations\<id>\error.log`. |

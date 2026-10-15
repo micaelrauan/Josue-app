@@ -80,6 +80,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao preparar pip. Verifique sua conexão.
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar PyTorch.' }
 & $venvPython -m pip install 'numpy<2' 'demucs==4.0.1' soundfile imageio-ffmpeg
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar Demucs.' }
+& $venvPython -m pip install 'yt-dlp[default]'
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar o importador de links do YouTube.' }
 $worker = Join-Path $projectPath 'tools\separate_audio.py'
 & $venvPython $worker --check
 if ($LASTEXITCODE -ne 0) { throw 'As dependências do motor não passaram na verificação.' }

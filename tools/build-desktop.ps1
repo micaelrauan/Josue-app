@@ -32,7 +32,7 @@ Expand-Archive -LiteralPath $archivePath -DestinationPath $target -Force
 
 $appRoot = Join-Path $target 'resources\app'
 New-Item -ItemType Directory -Force -Path $appRoot | Out-Null
-foreach ($name in @('package.json', 'server.js', 'separation.js', 'audio-export.js', 'LICENSE')) {
+foreach ($name in @('package.json', 'server.js', 'separation.js', 'audio-export.js', 'youtube-import.js', 'LICENSE')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $name) -Destination (Join-Path $appRoot $name)
 }
 Copy-Item -LiteralPath (Join-Path $projectRoot 'public') -Destination (Join-Path $appRoot 'public') -Recurse

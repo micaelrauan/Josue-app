@@ -23,9 +23,9 @@ export async function checkEngine() {
   } catch (error) { engine = { available: false, message: error.message }; }
   finally { checking = false; const track = hooks?.currentTrack(); if (track) repaint(track); }
 }
-export async function separateTrack(track) {
+export async function separateTrack(track, selectedModel) {
   if (jobs.get(track.id)?.running) return;
-  const model = document.querySelector('#separation-model')?.value || 'htdemucs';
+  const model = selectedModel || document.querySelector('#separation-model')?.value || 'htdemucs';
   jobs.set(track.id, { running: true, progress: 0, message: 'Enviando o áudio para o motor neste computador...' }); repaint(track);
   try {
     const response = await fetch(`/api/separations?model=${model}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: track.files[0].blob });
