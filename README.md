@@ -15,10 +15,12 @@ O projeto é independente e não é afiliado ao Moises. A separação usa [Demuc
 ## Instalar o aplicativo pronto
 
 1. Baixe `JosueApp-Setup.exe` na seção **Releases** do repositório, quando houver uma versão publicada. Num build local, use `dist/JosueApp-Setup.exe`.
-2. Abra o instalador e clique em **Instalar**. Ele copia o aplicativo para `%LOCALAPPDATA%\Programs\Josue App`, cria um atalho no menu Iniciar e, se solicitado, na área de trabalho. Depois baixa e prepara automaticamente Python, PyTorch, Demucs, FFmpeg, yt-dlp e os modelos de separação.
+2. Abra o instalador e clique em **Instalar**. Ele copia o aplicativo para `%LOCALAPPDATA%\Programs\Josue App`, cria um atalho no menu Iniciar e, se solicitado, na área de trabalho. Depois baixa e prepara automaticamente Python, PyTorch, Demucs, FFmpeg, yt-dlp e os modelos de separação. Em atualizações, reaproveita o motor quando as dependências existentes passam na verificação.
 3. Aguarde a mensagem **Instalação concluída** e clique em **Abrir app**. A etapa do motor exige internet, alguns GB livres e pode demorar vários minutos. Se falhar, clique em **Tentar de novo**; o diagnóstico fica em `%LOCALAPPDATA%\JosueApp\install.log`.
 
 Para remover o aplicativo, use **Desinstalar Josué App** nas configurações do Windows. Os projetos e o motor em `%LOCALAPPDATA%\JosueApp` são preservados para uma futura instalação.
+
+A partir da versão 0.2.0, o aplicativo instalado verifica se há uma versão mais nova nas **GitHub Releases** do projeto. Quando uma atualização estiver disponível, ele oferece a opção de baixar e aplicar o instalador, preservando os projetos. A primeira instalação da versão 0.2.0 precisa ser feita manualmente; versões anteriores ainda não têm o verificador. Para publicar uma atualização, aumente `version` em `package.json` e `Version` em `tools/installer.cs`, gere `JosueApp-Setup.exe` e publique uma Release estável com tag `vX.Y.Z` e esse arquivo como anexo. O atualizador exige o digest SHA-256 fornecido pelo GitHub para o anexo. Sem Release publicada, ele apenas mantém a versão atual.
 
 **Requisitos:** Windows 10 ou 11 de 64 bits e espaço para os arquivos de música. O executável não tem assinatura digital; o Windows pode pedir confirmação ao abrir um build local.
 
@@ -55,6 +57,12 @@ O script obtém o pacote oficial do Electron quando necessário, confere seu SHA
 | `dist/JosueApp-win32-x64/Josue App.exe` | Executável portátil, gerado por `build:desktop`. |
 
 Para modificar o ícone, edite `tools/make-icon.py`, execute `python tools/make-icon.py` e compile novamente. O Python só é necessário para gerar o ícone ou instalar o motor, não para compilar o executável padrão.
+
+### Desenvolver sem reinstalar
+
+No PowerShell, dentro do projeto, execute `npm run dev:desktop`. O comando reutiliza o Electron baixado em `.desktop-cache` e abre o código diretamente, sem gerar ZIP nem instalador. Alterações em `public/` recarregam a janela; alterações em `server.js`, nos serviços, em `desktop/main.cjs` ou em `package.json` reiniciam o aplicativo. Feche a janela ou pressione `Ctrl+C` para encerrar.
+
+O modo de desenvolvimento usa a porta `4175`, guarda dados de teste em `.data/dev` e perfil em `.desktop-cache/dev-profile`. Ele reutiliza o motor já instalado em `%LOCALAPPDATA%\JosueApp\engine`; se o motor ainda não estiver instalado, a interface abre, mas a separação e a importação do YouTube exigem instalá-lo uma vez. O script prepara a permissão de leitura do cache do Electron para o sandbox do Windows. Execute o comando em um PowerShell normal da sua conta caso o ambiente de desenvolvimento bloqueie essa permissão.
 
 Após gerar o instalador, `npm run clean:cache` remove as cópias temporárias da compilação e dos testes de extração. O instalador em `dist/` e o ZIP do Electron usado em compilações futuras são preservados.
 

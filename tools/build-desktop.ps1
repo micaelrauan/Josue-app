@@ -38,6 +38,7 @@ foreach ($name in @('package.json', 'server.js', 'separation.js', 'audio-export.
 Copy-Item -LiteralPath (Join-Path $projectRoot 'public') -Destination (Join-Path $appRoot 'public') -Recurse
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot 'desktop'), (Join-Path $appRoot 'tools') | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'desktop\main.cjs') -Destination (Join-Path $appRoot 'desktop\main.cjs')
+Copy-Item -LiteralPath (Join-Path $projectRoot 'desktop\updates.cjs') -Destination (Join-Path $appRoot 'desktop\updates.cjs')
 Copy-Item -LiteralPath (Join-Path $projectRoot 'desktop\icon.ico') -Destination (Join-Path $appRoot 'desktop\icon.ico')
 Copy-Item -LiteralPath (Join-Path $projectRoot 'desktop\icon.png') -Destination (Join-Path $appRoot 'desktop\icon.png')
 Copy-Item -LiteralPath (Join-Path $projectRoot 'tools\separate_audio.py') -Destination (Join-Path $appRoot 'tools\separate_audio.py')

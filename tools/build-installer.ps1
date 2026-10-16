@@ -9,6 +9,10 @@ $zipPath = Join-Path $distRoot 'JosueApp-windows-x64.zip'
 $output = if ($OutputFile) { [System.IO.Path]::GetFullPath($OutputFile) } else { Join-Path $distRoot 'JosueApp-Setup.exe' }
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $source = Join-Path $PSScriptRoot 'installer.cs'
+$version = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
+if ((Get-Content -LiteralPath $source -Raw) -notmatch [regex]::Escape("internal const string Version = `"$version`";")) {
+    throw 'A versão do instalador deve corresponder à versão do package.json.'
+}
 
 if (-not (Test-Path -LiteralPath $compiler)) { throw 'O compilador C# do .NET Framework não foi encontrado.' }
 if (-not $SkipDesktopBuild) {

@@ -1,7 +1,7 @@
 {
   "name": "josue-app",
   "productName": "Josué App",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -10,6 +10,7 @@
   "type": "module",
   "main": "desktop/main.cjs",
   "scripts": {
+    "dev:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev-desktop.ps1",
     "build:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-desktop.ps1",
     "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-installer.ps1",
     "clean:cache": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/clean-build-cache.ps1",

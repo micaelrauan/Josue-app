@@ -12,6 +12,21 @@ $installPath = [System.IO.Path]::GetFullPath($InstallRoot)
 New-Item -ItemType Directory -Force -Path $installPath | Out-Null
 Set-Location -LiteralPath $projectPath
 
+$venvPath = Join-Path $installPath '.venv'
+$venvPython = Join-Path $venvPath 'Scripts\python.exe'
+$worker = Join-Path $projectPath 'tools\separate_audio.py'
+if (Test-Path -LiteralPath $venvPython -PathType Leaf) {
+    try {
+        & $venvPython $worker --check 2>$null
+        $engineReady = $LASTEXITCODE -eq 0
+        & $venvPython -c 'import yt_dlp' 2>$null
+        if ($engineReady -and $LASTEXITCODE -eq 0) {
+            Write-Host 'Motor existente verificado. Instalação de dependências dispensada.'
+            exit 0
+        }
+    } catch { }
+}
+
 # An old Python registration can point to a directory that no longer exists.
 # Try 3.11 first, then 3.10 without changing or uninstalling other Python installs.
 function Test-CompatiblePython([string]$Path, [string]$Version) {
@@ -70,10 +85,8 @@ if (-not $pythonPath) { throw 'Não foi possível preparar Python 3.11 nem 3.10.
 Write-Host "Usando Python: $pythonPath"
 
 Write-Host 'Preparando ambiente local de separação...'
-$venvPath = Join-Path $installPath '.venv'
 & $pythonPath -m venv $venvPath
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar o ambiente Python.' }
-$venvPython = Join-Path $venvPath 'Scripts\python.exe'
 & $venvPython -m pip install --upgrade pip
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao preparar pip. Verifique sua conexão.' }
 & $venvPython -m pip install 'torch==2.0.1' 'torchaudio==2.0.2' --index-url https://download.pytorch.org/whl/cpu
@@ -82,7 +95,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar PyTorch.' }
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar Demucs.' }
 & $venvPython -m pip install 'yt-dlp[default]'
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar o importador de links do YouTube.' }
-$worker = Join-Path $projectPath 'tools\separate_audio.py'
 & $venvPython $worker --check
 if ($LASTEXITCODE -ne 0) { throw 'As dependências do motor não passaram na verificação.' }
 $env:TORCH_HOME = Join-Path $installPath '.models'

@@ -14,7 +14,7 @@ using System.IO.Compression;
 internal static class AppInstall
 {
     internal const string Name = "Josué App";
-    internal const string Version = "0.1.0";
+    internal const string Version = "0.2.0";
     internal const string RegistryKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\JosueApp";
     internal static readonly string InstallDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Josue App");
@@ -116,9 +116,17 @@ internal static class Program
             catch { Environment.ExitCode = 1; }
             return;
         }
+        bool automatic = args.Length > 0 && args[0] == "--update";
+        int waitPid = 0;
+        if (automatic)
+        {
+            foreach (string arg in args)
+                if (arg.StartsWith("--wait-pid=", StringComparison.Ordinal))
+                    int.TryParse(arg.Substring("--wait-pid=".Length), out waitPid);
+        }
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new InstallForm());
+        Application.Run(new InstallForm(automatic, waitPid));
     }
 }
 
@@ -130,9 +138,13 @@ internal sealed class InstallForm : Form
     private readonly CheckBox desktopShortcut;
     private bool busy;
     private bool installed;
+    private readonly bool automatic;
+    private readonly int waitPid;
 
-    internal InstallForm()
+    internal InstallForm(bool automatic, int waitPid)
     {
+        this.automatic = automatic;
+        this.waitPid = waitPid;
         Text = "Instalar " + AppInstall.Name;
         ClientSize = new Size(520, 280);
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -147,7 +159,7 @@ internal sealed class InstallForm : Form
             Location = new Point(26, 76), Size = new Size(465, 45) });
         Controls.Add(new Label { Text = "Destino: " + AppInstall.InstallDir,
             Location = new Point(26, 130), Size = new Size(465, 33), AutoEllipsis = true });
-        desktopShortcut = new CheckBox { Text = "Criar atalho na área de trabalho", Checked = true,
+        desktopShortcut = new CheckBox { Text = "Criar atalho na área de trabalho", Checked = !automatic || File.Exists(AppInstall.DesktopLink),
             Location = new Point(26, 165), Size = new Size(350, 25) };
         Controls.Add(desktopShortcut);
         progress = new ProgressBar { Location = new Point(26, 199), Size = new Size(466, 14), Style = ProgressBarStyle.Continuous };
@@ -158,6 +170,7 @@ internal sealed class InstallForm : Form
         action.Click += ActionClick;
         Controls.Add(action);
         FormClosing += delegate(object sender, FormClosingEventArgs e) { if (busy) e.Cancel = true; };
+        if (automatic) Shown += delegate { BeginInvoke((Action)delegate() { ActionClick(this, EventArgs.Empty); }); };
     }
 
     private void ActionClick(object sender, EventArgs e)
@@ -177,6 +190,16 @@ internal sealed class InstallForm : Form
         {
             try
             {
+                if (automatic && waitPid > 0)
+                {
+                    try
+                    {
+                        using (Process previous = Process.GetProcessById(waitPid))
+                            if (!previous.WaitForExit(30000)) throw new InvalidOperationException("O aplicativo não fechou para atualizar.");
+                    }
+                    catch (ArgumentException) { }
+                    for (int attempt = 0; attempt < 20 && AppInstall.IsRunning(); attempt++) Thread.Sleep(500);
+                }
                 Install(shortcut);
                 BeginInvoke((Action)delegate()
                 {
@@ -187,6 +210,15 @@ internal sealed class InstallForm : Form
                     status.Text = "Instalação concluída. O motor está pronto.";
                     action.Text = "Abrir app";
                     action.Enabled = true;
+                    if (automatic)
+                    {
+                        try
+                        {
+                            Process.Start(Path.Combine(AppInstall.InstallDir, "Josue App.exe"));
+                            Close();
+                        }
+                        catch (Exception error) { status.Text = "Atualizado. Abra o aplicativo pelo menu Iniciar: " + error.Message; }
+                    }
                 });
             }
             catch (Exception error)

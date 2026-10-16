@@ -1,9 +1,17 @@
 const { app, BrowserWindow, Menu, dialog, session } = require('electron');
-const { existsSync, mkdirSync } = require('node:fs');
+const { mkdirSync, watch } = require('node:fs');
 const { join } = require('node:path');
+const { spawn } = require('node:child_process');
+const { findUpdate, downloadUpdate } = require('./updates.cjs');
 
-const PORT = 4174;
-const APP_ID = 'com.micaelrauan.josueapp';
+const development = process.env.JOSUE_DEV === '1';
+const PORT = development ? 4175 : 4174;
+const APP_ID = development ? 'com.micaelrauan.josueapp.dev' : 'com.micaelrauan.josueapp';
+const installedData = join(process.env.LOCALAPPDATA || app.getPath('appData'), 'JosueApp');
+const userData = development ? join(__dirname, '..', '.desktop-cache', 'dev-profile') : installedData;
+mkdirSync(userData, { recursive: true });
+app.setPath('userData', userData);
+app.setPath('sessionData', userData);
 const instanceLock = app.requestSingleInstanceLock();
 let window;
 let server;
@@ -20,19 +28,15 @@ if (!instanceLock) {
 
   app.setAppUserModelId(APP_ID);
   app.setName('Josué App');
-  const userData = join(process.env.LOCALAPPDATA || app.getPath('appData'), 'JosueApp');
-  mkdirSync(userData, { recursive: true });
-  app.setPath('userData', userData);
-  app.setPath('sessionData', userData);
 
   app.whenReady().then(async () => {
     try {
       const appRoot = app.getAppPath();
-      const engineRoot = join(userData, 'engine');
+      const engineRoot = join(installedData, 'engine');
       const { createAppServer } = await import('../server.js');
       server = createAppServer({
         root: join(appRoot, 'public'),
-        dataRoot: join(userData, 'data'),
+        dataRoot: development ? join(appRoot, '.data', 'dev') : join(userData, 'data'),
         venvRoot: join(engineRoot, '.venv'),
         modelsRoot: join(engineRoot, '.models'),
       });
@@ -61,6 +65,52 @@ if (!instanceLock) {
       window.once('ready-to-show', () => window.show());
       window.on('closed', () => { window = null; });
       await window.loadURL(`http://127.0.0.1:${PORT}/`);
+      if (development) {
+        let reloadTimer;
+        const watcher = watch(join(appRoot, 'public'), { recursive: true }, (_event, filename) => {
+          if (!filename || !/\.(html|css|js|svg)$/.test(String(filename))) return;
+          clearTimeout(reloadTimer);
+          reloadTimer = setTimeout(() => window?.webContents.reloadIgnoringCache(), 180);
+        });
+        app.on('before-quit', () => { clearTimeout(reloadTimer); watcher.close(); });
+      } else {
+        let checkingForUpdates = false;
+        const checkUpdates = async () => {
+          if (!window || !app.isReady() || checkingForUpdates) return;
+          checkingForUpdates = true;
+          let requested = false;
+          try {
+            const update = await findUpdate(app.getVersion());
+            if (!update || !window) return;
+            const choice = await dialog.showMessageBox(window, { type: 'info', title: 'Atualização disponível',
+              message: `Josué App ${update.version} está disponível.`,
+              detail: 'O aplicativo pode baixar e instalar a atualização agora. Seus projetos serão preservados.',
+              buttons: ['Atualizar agora', 'Depois'], defaultId: 0, cancelId: 1 });
+            if (choice.response !== 0 || !window) return;
+            requested = true;
+            window.setTitle('Josué App — baixando atualização...');
+            const installer = await downloadUpdate(update, join(userData, 'updates'));
+            window.setTitle('Josué App');
+            const installerProcess = await new Promise((resolve, reject) => {
+              const child = spawn(installer, ['--update', `--wait-pid=${process.pid}`], {
+                detached: true, stdio: 'ignore', windowsHide: false,
+              });
+              child.once('spawn', () => resolve(child));
+              child.once('error', reject);
+            });
+            installerProcess.unref();
+            app.quit();
+          } catch (error) {
+            if (window) window.setTitle('Josué App');
+            console.warn('Verificação de atualização:', error.message);
+            if (requested && window) dialog.showMessageBox(window, { type: 'error', title: 'Atualização não concluída',
+              message: 'Não foi possível instalar a atualização.', detail: error.message, buttons: ['OK'] });
+          } finally { checkingForUpdates = false; }
+        };
+        setTimeout(checkUpdates, 20000);
+        const interval = setInterval(checkUpdates, 6 * 60 * 60 * 1000);
+        app.on('before-quit', () => clearInterval(interval));
+      }
     } catch (error) {
       dialog.showErrorBox('Josué App não iniciou', error.code === 'EADDRINUSE'
         ? `A porta ${PORT} já está ocupada. Feche o servidor ou aplicativo que a está usando e tente novamente.`
