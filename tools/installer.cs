@@ -14,7 +14,7 @@ using System.IO.Compression;
 internal static class AppInstall
 {
     internal const string Name = "Josué App";
-    internal const string Version = "0.2.1";
+    internal const string Version = "0.2.2";
     internal const string RegistryKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\JosueApp";
     internal static readonly string InstallDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Josue App");

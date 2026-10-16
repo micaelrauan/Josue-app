@@ -7,7 +7,7 @@ O projeto é independente e não é afiliado ao Moises. A separação usa [Demuc
 ## Recursos
 
 - Biblioteca de músicas importadas do computador ou por link de vídeo do YouTube.
-- Studio com formas de onda, volume, panorama, mute, solo, velocidade, tom, metrônomo e repetição de trechos.
+- Studio com formas de onda, volume, panorama, mute, solo, velocidade, tom, metrônomo com estimativa automática de BPM e repetição de trechos.
 - Ao importar uma música, o aplicativo pergunta se você deseja separar os instrumentos. A separação opcional cria 4 canais (vocais, bateria, baixo e outros) ou 6 canais (acrescenta guitarra e piano; modelo experimental).
 - Letras, acordes com marcação de tempo, seções e setlists adicionados manualmente.
 - Exportação de canais e da mixagem em WAV. MP3 e M4A ficam disponíveis com o motor local e FFmpeg instalados.

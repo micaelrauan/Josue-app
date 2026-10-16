@@ -121,6 +121,14 @@ test('metronome follows tempo and reschedules from a seek',async()=>{
   engine.tickMetronome();assert.equal(context.clicks.length,1);
   engine.seek(20);context.currentTime+=.03;engine.tickMetronome();assert.equal(context.clicks.length,2);engine.destroy();
 });
+
+test('metronome aligns clicks to the detected beat offset',async()=>{
+  const {engine,context}=fixture();engine.metronome.enabled=true;engine.setTempo(100,.2);await engine.play();
+  context.currentTime=10.03;engine.tickMetronome();assert.equal(context.clicks?.length||0,0);
+  context.currentTime=10.14;engine.tickMetronome();assert.equal(context.clicks.length,1);
+  assert.ok(Math.abs(context.clicks[0].when-10.23)<.001);
+  engine.destroy();
+});
 test('LRC timestamps and chord transposition remain aligned, including flat notes and slash bass',()=>{
   assert.deepEqual(parseTimedText('[00:12.50][00:01] Hello\n[00:04] World\n[00:70] bad'),[{time:1,text:'Hello'},{time:4,text:'World'},{time:12.5,text:'Hello'}]);
   assert.equal(transposeChord('Bbmaj7/F',2),'Cmaj7/G');assert.equal(transposeChord('Em',-2),'Dm');

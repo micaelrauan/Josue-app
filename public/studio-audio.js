@@ -32,6 +32,7 @@ export class StudioAudio {
     this.semitones = 0;
     this.tuning = 440;
     this.bpm = 120;
+    this.beatOffset = 0;
     this.metronome = { enabled: false, volume: .6, pan: 0, beats: 4 };
     this.clicks = new Set();
     this.nextBeat = 0;
@@ -81,7 +82,8 @@ export class StudioAudio {
     const beatDuration=60/this.bpm/this.rate;
     this.startedAt = this.context.currentTime + 0.03 + countIn*beatDuration;
     for(let i=0;i<countIn;i++)this.clickAt(this.context.currentTime+.03+i*beatDuration,i===0,true);
-    this.nextBeat=Math.ceil(this.position/(60/this.bpm)-.0001);
+    this.nextBeat=Math.max(0,Math.ceil((this.position-this.beatOffset)/(60/this.bpm)-.0001));
+    this.lastMetronomeTime=undefined;
     this.sources = this.buffers.map((buffer, index) => {
       if (!buffer || this.position >= buffer.duration) return null;
       const source = this.context.createBufferSource();
@@ -115,6 +117,16 @@ export class StudioAudio {
     this.updatePitch();
     if (wasPlaying) this.start();
   }
+  setTempo(bpm, offset = 0) {
+    if (!Number.isFinite(bpm) || bpm < 30 || bpm > 300) return;
+    this.bpm = bpm;
+    const beatDuration = 60 / bpm;
+    this.beatOffset = Number.isFinite(offset) ? ((offset % beatDuration) + beatDuration) % beatDuration : 0;
+    for (const oscillator of this.clicks) { try { oscillator.stop(); } catch {} }
+    this.clicks.clear();
+    this.nextBeat = Math.max(0, Math.ceil((this.time - this.beatOffset) / beatDuration - 0.0001));
+    this.lastMetronomeTime = undefined;
+  }
   setLoop(start, end) {
     const wasPlaying = this.playing;
     this.pause();
@@ -137,11 +149,11 @@ export class StudioAudio {
   }
   tickMetronome(){
     if(!this.playing||this.context.currentTime<this.startedAt)return;
-    const beatDuration=60/this.bpm,current=this.time,beat=Math.floor(current/beatDuration);
-    if(this.lastMetronomeTime!==undefined&&current<this.lastMetronomeTime)this.nextBeat=Math.ceil(current/beatDuration);
+    const beatDuration=60/this.bpm,current=this.time,beat=Math.floor((current-this.beatOffset)/beatDuration);
+    if(this.lastMetronomeTime!==undefined&&current<this.lastMetronomeTime)this.nextBeat=Math.max(0,Math.ceil((current-this.beatOffset)/beatDuration));
     this.lastMetronomeTime=current;
     if(this.nextBeat<beat)this.nextBeat=beat;
-    const at=this.nextBeat*beatDuration;
+    const at=this.beatOffset+this.nextBeat*beatDuration;
     if(at<Math.min(this.duration,current+.12*this.rate)){
       this.clickAt(this.context.currentTime+Math.max(.003,(at-current)/this.rate),this.nextBeat%this.metronome.beats===0);this.nextBeat++;
     }

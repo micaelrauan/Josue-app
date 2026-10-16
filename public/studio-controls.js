@@ -8,10 +8,31 @@ export function mountStudio({root,track,onAction,onSave,notify}){
   const peaks=new Map(),failed=new Set();
   let exportFormat='wav',loaded=false;
   let manualScrollUntil=0;
-  let disposed=false,animation,zoom=1,start=null,end=null,loop=false,saveTimer,lastPosition=-1,activePanel=null,showLyrics=false,showChords=false,exporting=false,pitchReady=false,lastRead=-1;
+  let disposed=false,animation,zoom=1,start=null,end=null,loop=false,saveTimer,lastPosition=-1,activePanel=null,showLyrics=false,showChords=false,exporting=false,pitchReady=false,lastRead=-1,tempoWorker=null;
   const $=selector=>root.querySelector(selector),$$=selector=>root.querySelectorAll(selector);
   const persist=()=>{track.mix=settings;track.studio=prefs;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;onSave(track).catch(()=>notify('Não foi possível salvar. Verifique o espaço do navegador.'));},300);};
-  engine.bpm=Number(prefs.bpm)||120;
+  engine.setTempo(Number(prefs.bpm)||120,Number(prefs.beatOffset)||0);
+  function tempoStatus(message){$('#studio-tempo-status').textContent=message;$('#studio-metronome-tempo-status').textContent=message;}
+  function stopTempoAnalysis(){if(tempoWorker){tempoWorker.terminate();tempoWorker=null;}$('#studio-detect-tempo').disabled=!engine.buffers[0];}
+  function analyzeTempo(){
+    const buffer=engine.buffers[0];if(!buffer)return tempoStatus('Carregue o áudio original para analisar o BPM.');
+    stopTempoAnalysis();$('#studio-detect-tempo').disabled=true;tempoStatus('Analisando o BPM da música...');
+    let worker;
+    try{
+      const length=Math.min(buffer.length,Math.round(buffer.sampleRate*90));
+      const samples=new Float32Array(buffer.getChannelData(0).subarray(0,length));
+      worker=new Worker(new URL('./studio-tempo-worker.js',import.meta.url),{type:'module'});tempoWorker=worker;
+      worker.onmessage=({data})=>{
+        if(disposed||tempoWorker!==worker)return;stopTempoAnalysis();
+        if(!data||!Number.isFinite(data.bpm)||data.bpm<30||data.bpm>300)return tempoStatus('Não foi possível estimar o BPM. Ajuste o valor manualmente.');
+        engine.setTempo(data.bpm,data.offset);prefs.bpm=data.bpm;prefs.beatOffset=engine.beatOffset;prefs.bpmSource='auto';
+        $('#studio-base-bpm').value=data.bpm;$('#studio-bpm').value=Math.round(data.bpm*engine.rate);$('#studio-bpm-label').textContent=Math.round(data.bpm*engine.rate);
+        tempoStatus(`BPM estimado: ${data.bpm}. Ajuste manualmente se necessário.`);persist();
+      };
+      worker.onerror=()=>{if(disposed||tempoWorker!==worker)return;stopTempoAnalysis();tempoStatus('Não foi possível analisar o BPM. Ajuste manualmente.');};
+      worker.postMessage({samples,sampleRate:buffer.sampleRate},[samples.buffer]);
+    }catch{if(worker)worker.terminate();tempoWorker=null;$('#studio-detect-tempo').disabled=false;tempoStatus('Não foi possível analisar o BPM. Ajuste manualmente.');}
+  }
   function mix(save=true){
     engine.updateMix();const hasSolo=settings.channels.some(c=>c.solo);
     settings.channels.forEach((channel,index)=>{const row=$(`[data-channel="${index}"]`);row.classList.toggle('is-muted',hasSolo?!channel.solo:channel.muted);for(const key of ['mute','solo']){const b=row.querySelector(`[data-studio="${key}"]`),on=key==='mute'?channel.muted:channel.solo;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));}row.querySelector('.studio-pan-knob').style.setProperty('--pan-angle',`${channel.pan*135}deg`);});
@@ -103,6 +124,7 @@ export function mountStudio({root,track,onAction,onSave,notify}){
       else if(action==='import-notes')$('#studio-notes-input').click();
       else if(action==='reset'){const defaults=mixerSettings({...track,mix:null});settings.master=defaults.master;settings.channels=defaults.channels;$$('.studio-volume').forEach(el=>{el.value=1;el.nextElementSibling.textContent='100%';});$$('.studio-pan-input').forEach(el=>el.value=0);$('#studio-master').value=settings.master;$('#studio-master-value').textContent='80%';mix();}
       else if(action==='metronome'){engine.metronome.enabled=!engine.metronome.enabled;b.classList.toggle('on',!engine.metronome.enabled);b.setAttribute('aria-pressed',String(!engine.metronome.enabled));b.setAttribute('aria-label',engine.metronome.enabled?'Silenciar metrônomo':'Ativar metrônomo');}
+      else if(action==='detect-tempo')analyzeTempo();
       else if(action==='step'){const el=$(`#${b.dataset.field}`);el.value=Math.max(Number(el.min),Math.min(Number(el.max),Number(el.value)+Number(b.dataset.step)));input({target:el});}
       else if(action==='tempo-reset'){engine.setRate(1);$('#studio-speed').value=1;$('#studio-bpm').value=engine.bpm;$('#studio-speed-value').textContent='1.00×';$('#studio-bpm-label').textContent=engine.bpm;}
       else if(action==='pitch-reset'){$('#studio-pitch').value=0;$('#studio-tuning').value=440;input({target:$('#studio-pitch')});}
@@ -126,7 +148,7 @@ export function mountStudio({root,track,onAction,onSave,notify}){
     else if(el.matches('.studio-pan-input')){settings.channels[index].pan=n;mix();}
     else if(el.id==='studio-master'){settings.master=n;$('#studio-master-value').textContent=`${Math.round(n*100)}%`;mix();}
     else if(el.id==='studio-speed'||el.id==='studio-bpm'){const rate=Math.max(.5,Math.min(2,el.id==='studio-speed'?n:n/engine.bpm));engine.setRate(rate);$('#studio-speed').value=rate;$('#studio-speed-value').textContent=`${rate.toFixed(2)}×`;$('#studio-bpm').value=Math.round(engine.bpm*rate);$('#studio-bpm-label').textContent=Math.round(engine.bpm*rate);}
-    else if(el.id==='studio-base-bpm'){if(n<30||n>300)return;prefs.bpm=n;engine.bpm=n;$('#studio-bpm').value=Math.round(n*engine.rate);$('#studio-bpm-label').textContent=Math.round(n*engine.rate);engine.nextBeat=Math.ceil(engine.time/(60/n));persist();}
+    else if(el.id==='studio-base-bpm'){if(n<30||n>300)return;stopTempoAnalysis();prefs.bpm=n;prefs.bpmSource='manual';prefs.beatOffset=0;engine.setTempo(n,0);$('#studio-bpm').value=Math.round(n*engine.rate);$('#studio-bpm-label').textContent=Math.round(n*engine.rate);tempoStatus('BPM definido manualmente.');persist();}
     else if(el.id==='studio-pitch'||el.id==='studio-tuning'||el.id==='studio-key'){
       if(el.id==='studio-key'){prefs.key=el.value;persist();}
       const semitones=Math.max(-12,Math.min(12,Number($('#studio-pitch').value))),tuning=Math.max(400,Math.min(480,Number($('#studio-tuning').value)||440));
@@ -154,18 +176,18 @@ export function mountStudio({root,track,onAction,onSave,notify}){
   const manualScroll=()=>{manualScrollUntil=Date.now()+5000;};$('#studio-reading').addEventListener('wheel',manualScroll,{passive:true});$('#studio-reading').addEventListener('touchmove',manualScroll,{passive:true});
   const observer=new ResizeObserver(drawWaves);observer.observe($('#studio-scroll'));mix(false);renderSections();
   const metronomeTimer=setInterval(()=>{if(!disposed)engine.tickMetronome();},25);
-  function frame(){if(disposed)return;if(engine.playing&&!engine.loop&&engine.time>=engine.duration){engine.pause();transport();}position();$('#studio-beat-indicator').classList.toggle('beat-on',engine.playing&&engine.metronome.enabled&&(engine.time%(60/engine.bpm))<.07);animation=requestAnimationFrame(frame);}animation=requestAnimationFrame(frame);
+  function frame(){if(disposed)return;if(engine.playing&&!engine.loop&&engine.time>=engine.duration){engine.pause();transport();}position();const beatDuration=60/engine.bpm,beatPhase=((engine.time-engine.beatOffset)%beatDuration+beatDuration)%beatDuration;$('#studio-beat-indicator').classList.toggle('beat-on',engine.playing&&engine.metronome.enabled&&beatPhase<.07);animation=requestAnimationFrame(frame);}animation=requestAnimationFrame(frame);
   async function load(){
     fetch('/api/audio-export/status').then(async response=>{if(!response.ok)throw Error();return response.json();}).then(status=>{if(disposed)return;$$('[data-studio="format"]').forEach(b=>b.disabled=b.dataset.format!=='wav'&&!status.available);$('#studio-codec-status').textContent=status.available?'MP3, M4A e WAV disponíveis.':status.message;}).catch(()=>{if(!disposed)$('#studio-codec-status').textContent='Reinicie npm run dev para habilitar MP3/M4A. WAV já está disponível.';});
     try{pitchReady=await engine.enablePitch();}catch{pitchReady=false;}if(disposed)return;
     $('#studio-pitch-status').textContent=pitchReady?'Ajuste local de tom. Pode alterar os transientes do áudio.':'Ajuste de tom indisponível neste navegador. A velocidade também altera a afinação.';
     if(!pitchReady){$('#studio-pitch').disabled=true;$('#studio-tuning').disabled=true;$$('[data-field="studio-pitch"]').forEach(b=>b.disabled=true);}
     for(const {file,index} of orderedFiles(track)){
-      if(disposed)return;try{const buffer=await context.decodeAudioData(await file.blob.arrayBuffer());if(disposed)return;engine.addBuffer(index,buffer);peaks.set(index,waveformPeaks(buffer,16384));$(`.studio-wave[data-index="${index}"] .studio-wave-label`).hidden=true;}catch{if(disposed)return;failed.add(index);const wave=$(`.studio-wave[data-index="${index}"]`);wave.classList.add('wave-error');wave.querySelector('.studio-wave-label').textContent='Não foi possível ler este áudio';}
+      if(disposed)return;try{const buffer=await context.decodeAudioData(await file.blob.arrayBuffer());if(disposed)return;engine.addBuffer(index,buffer);peaks.set(index,waveformPeaks(buffer,16384));$(`.studio-wave[data-index="${index}"] .studio-wave-label`).hidden=true;if(index===0){$('#studio-detect-tempo').disabled=false;if(!prefs.bpm)analyzeTempo();}}catch{if(disposed)return;failed.add(index);const wave=$(`.studio-wave[data-index="${index}"]`);wave.classList.add('wave-error');wave.querySelector('.studio-wave-label').textContent='Não foi possível ler este áudio';if(index===0)tempoStatus('Não foi possível ler o áudio original para calcular o BPM.');}
       $('#studio-status').textContent=`Carregando faixas: ${peaks.size+failed.size} de ${track.files.length}`;$('#studio-duration').textContent=time(engine.duration);$('#studio-seek').max=engine.duration;drawWaves();await new Promise(r=>setTimeout(r,0));
     }
     if(disposed)return;loaded=true;$('#studio-play').disabled=peaks.size===0;$('#studio-status').textContent=failed.size?`${peaks.size} faixas prontas · ${failed.size} com erro`:`${peaks.size} faixas · salvas neste navegador`;if(prefs.repeat)applyLoop();if(engine.duration&&track.duration!==engine.duration){track.duration=engine.duration;persist();}
   }
   load().catch(()=>{if(!disposed)notify('Não foi possível preparar as faixas. Reabra o projeto.');});
-  return {destroy({save=true}={}){disposed=true;cancelAnimationFrame(animation);clearInterval(metronomeTimer);observer.disconnect();clearTimeout(saveTimer);if(save&&saveTimer){track.mix=settings;track.studio=prefs;onSave(track).catch(()=>notify('Não foi possível salvar a mixagem.'));}root.removeEventListener('click',click);root.removeEventListener('input',input);root.removeEventListener('change',change);root.removeEventListener('keydown',keydown);root.removeEventListener('submit',submit);$('#studio-reading').removeEventListener('wheel',manualScroll);$('#studio-reading').removeEventListener('touchmove',manualScroll);engine.destroy();}};
+  return {destroy({save=true}={}){disposed=true;stopTempoAnalysis();cancelAnimationFrame(animation);clearInterval(metronomeTimer);observer.disconnect();clearTimeout(saveTimer);if(save&&saveTimer){track.mix=settings;track.studio=prefs;onSave(track).catch(()=>notify('Não foi possível salvar a mixagem.'));}root.removeEventListener('click',click);root.removeEventListener('input',input);root.removeEventListener('change',change);root.removeEventListener('keydown',keydown);root.removeEventListener('submit',submit);$('#studio-reading').removeEventListener('wheel',manualScroll);$('#studio-reading').removeEventListener('touchmove',manualScroll);engine.destroy();}};
 }
