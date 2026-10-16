@@ -15,6 +15,7 @@ if ((Get-Content -LiteralPath $source -Raw) -notmatch [regex]::Escape("internal 
 }
 
 if (-not (Test-Path -LiteralPath $compiler)) { throw 'O compilador C# do .NET Framework não foi encontrado.' }
+New-Item -ItemType Directory -Force -Path $distRoot | Out-Null
 if (-not $SkipDesktopBuild) {
     & (Join-Path $PSScriptRoot 'build-desktop.ps1') -OutputRoot $stageRoot
 }
