@@ -30,6 +30,7 @@ test('link import serves audio and enforces origin, duration and link limits', a
   let duration = 180;
   let lastArgs;
   let failure = '';
+  let badMetadata = false;
   const launch = (_python, args) => {
     lastArgs = args;
     const child = new EventEmitter();
@@ -42,7 +43,7 @@ test('link import serves audio and enforces origin, duration and link limits', a
       }
       const output = args[args.indexOf('--output') + 1];
       await writeFile(output.replace('%(id)s.%(ext)s', 'abcdefghijk.m4a'), 'fixture audio');
-      child.stdout.write(JSON.stringify({ title: 'Minha música', duration }) + '\n');
+      child.stdout.write(badMetadata ? '://www.youtube.com/watch?v=dbYQy0ANi5w\n' : JSON.stringify({ id: 'abcdefghijk', title: 'Minha música', duration }) + '\n');
       child.emit('close', 0);
     }, 5);
     return child;
@@ -60,6 +61,8 @@ test('link import serves audio and enforces origin, duration and link limits', a
   assert.equal(decodeURIComponent(success.headers.get('x-track-title')), 'Minha música');
   assert.equal(success.headers.get('content-type'), 'audio/mp4');
   assert.equal(await success.text(), 'fixture audio');
+  assert.equal(lastArgs[lastArgs.indexOf('--print') + 1], 'after_move:%(.{id,title,duration,is_live,live_status})j');
+  assert.equal(lastArgs.includes('--print-json'), false);
   const radio = await post('https://www.youtube.com/watch?v=dbYQy0ANi5w&list=RDdbYQy0ANi5w&start_radio=1');
   assert.equal(radio.status, 200);
   assert.equal(lastArgs.at(-1), 'https://www.youtube.com/watch?v=dbYQy0ANi5w');
@@ -72,4 +75,9 @@ test('link import serves audio and enforces origin, duration and link limits', a
   const unavailable = await post('https://www.youtube.com/watch?v=dbYQy0ANi5w&list=RDdbYQy0ANi5w');
   assert.equal(unavailable.status, 422);
   assert.match((await unavailable.json()).error, /indisponível no YouTube/);
+  failure = '';
+  badMetadata = true;
+  const malformed = await post('https://youtu.be/abcdefghijk');
+  assert.equal(malformed.status, 422);
+  assert.match((await malformed.json()).error, /não conseguiu ler os dados do vídeo/);
 });

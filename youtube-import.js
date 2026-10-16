@@ -65,19 +65,23 @@ export function createYouTubeImportService({ python, dataRoot = join(tmpdir(), '
       try {
         const args = ['-m', 'yt_dlp', '--ignore-config', '--no-playlist', '--no-cache-dir', '--no-progress',
           '--format', 'bestaudio[ext=m4a]/bestaudio', '--match-filters', 'duration <= 1200 & !is_live',
-          '--max-filesize', '250M', '--js-runtimes', `node:${node}`, '--print-json',
+          '--max-filesize', '250M', '--js-runtimes', `node:${node}`, '--no-simulate',
+          '--print', 'after_move:%(.{id,title,duration,is_live,live_status})j',
           '--output', join(directory, '%(id)s.%(ext)s'), '--', videoUrl];
         const result = await new Promise((resolve, reject) => {
           let output = '', error = '', finished = false;
           const child = launch(python, args, { windowsHide: true, env: { ...process.env, PYTHONUTF8: '1', ELECTRON_RUN_AS_NODE: '1' } });
           const timer = setTimeout(() => { child.kill(); finish(new Error('O download demorou demais. Tente novamente.')); }, 5 * 60 * 1000);
           function finish(failure, value) { if (finished) return; finished = true; clearTimeout(timer); failure ? reject(failure) : resolve(value); }
-          child.stdout.on('data', chunk => { output = (output + chunk.toString()).slice(-500000); });
+          child.stdout.on('data', chunk => { output = (output + chunk.toString()).slice(-16000); });
           child.stderr.on('data', chunk => { error = (error + chunk.toString()).slice(-4000); });
           child.on('error', () => finish(new Error('Não foi possível iniciar o importador. Execute o instalador novamente.')));
           child.on('close', code => finish(code === 0 ? null : new Error(downloadError(error)), output));
         });
-        const metadata = JSON.parse(result.trim().split('\n').at(-1));
+        let metadata;
+        try { metadata = JSON.parse(result.trim().split('\n').at(-1)); }
+        catch { throw new Error('O importador não conseguiu ler os dados do vídeo. Tente novamente.'); }
+        if (!metadata || !/^[\w-]{11}$/.test(metadata.id || '')) throw new Error('O importador não devolveu os dados do vídeo. Tente novamente.');
         if (metadata.is_live || metadata.live_status === 'is_live') throw new Error('Transmissões ao vivo não podem ser importadas.');
         if (metadata.duration > 1200) throw new Error('O limite é de 20 minutos por música.');
         const files = (await readdir(directory)).filter(name => /^[\w-]{11}\.(m4a|webm|mp3|opus)$/.test(name));
