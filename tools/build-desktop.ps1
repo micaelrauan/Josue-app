@@ -14,7 +14,15 @@ if (-not (Test-Path -LiteralPath $archivePath)) {
     Write-Host "Baixando Electron $electronVersion do projeto oficial..."
     Invoke-WebRequest "https://github.com/electron/electron/releases/download/v$electronVersion/$archiveName" -OutFile $archivePath
 }
-if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash -ne $expectedHash) {
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+$archiveStream = [System.IO.File]::OpenRead($archivePath)
+try {
+    $actualHash = [System.BitConverter]::ToString($sha256.ComputeHash($archiveStream)).Replace('-', '')
+} finally {
+    $archiveStream.Dispose()
+    $sha256.Dispose()
+}
+if ($actualHash -ne $expectedHash) {
     throw "O pacote do Electron não passou na verificação SHA-256: $archivePath"
 }
 
