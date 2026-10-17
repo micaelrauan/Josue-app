@@ -14,6 +14,7 @@ case "$arch" in
 esac
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+app_version="$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).version' "$root/package.json")"
 version=44.7.0
 archive="electron-v${version}-darwin-${electron_arch}.zip"
 cache="$root/.desktop-cache"
@@ -46,15 +47,23 @@ cp "$root/tools/separate_audio.py" "$payload/tools/"
 rm -f "$app/Contents/Resources/default_app.asar"
 
 plist="$app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleName Josue App' "$plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Josue App' "$plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.micaelrauan.josueapp' "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).version' "$root/package.json")" "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).version' "$root/package.json")" "$plist"
+set_plist() {
+  local target="$1" key="$2" value="$3"
+  if /usr/libexec/PlistBuddy -c "Print :$key" "$target" >/dev/null 2>&1; then
+    /usr/libexec/PlistBuddy -c "Set :$key $value" "$target"
+  else
+    /usr/libexec/PlistBuddy -c "Add :$key string $value" "$target"
+  fi
+}
+set_plist "$plist" CFBundleName 'Josue App'
+set_plist "$plist" CFBundleDisplayName 'Josue App'
+set_plist "$plist" CFBundleIdentifier com.micaelrauan.josueapp
+set_plist "$plist" CFBundleShortVersionString "$app_version"
+set_plist "$plist" CFBundleVersion "$app_version"
 for helper_plist in "$app"/Contents/Frameworks/*Helper*.app/Contents/Info.plist; do
   [[ -f "$helper_plist" ]] || continue
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleName Josue App Helper' "$helper_plist"
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Josue App Helper' "$helper_plist"
+  set_plist "$helper_plist" CFBundleName 'Josue App Helper'
+  set_plist "$helper_plist" CFBundleDisplayName 'Josue App Helper'
 done
 iconset="$work/Josue.iconset"
 mkdir -p "$iconset"
@@ -67,7 +76,7 @@ cp "$iconset/icon_256x256.png" "$iconset/icon_128x128@2x.png"
 cp "$iconset/icon_512x512.png" "$iconset/icon_256x256@2x.png"
 mv "$iconset/icon_1024x1024.png" "$iconset/icon_512x512@2x.png"
 iconutil -c icns "$iconset" -o "$app/Contents/Resources/Josue.icns"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Josue.icns' "$plist"
+set_plist "$plist" CFBundleIconFile Josue.icns
 codesign --force --deep --sign - "$app"
 
 stage="$work/installer"
