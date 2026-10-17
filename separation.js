@@ -5,7 +5,7 @@ import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 const labels = { vocals: 'Vocais', drums: 'Bateria', bass: 'Baixo', guitar: 'Guitarra', piano: 'Piano', other: 'Outros instrumentos' };
-export function createSeparationService({ dataRoot = resolve('.data/separations'), python = process.env.SEPARATION_PYTHON || resolve('.venv/Scripts/python.exe'), worker = resolve('tools/separate_audio.py'), modelsRoot = resolve('.models'), launch = spawn } = {}) {
+export function createSeparationService({ dataRoot = resolve('.data/separations'), python = process.env.SEPARATION_PYTHON || resolve(process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python3'), worker = resolve('tools/separate_audio.py'), modelsRoot = resolve('.models'), launch = spawn } = {}) {
   const jobs = new Map();
   let active = false;
   const env = { ...process.env, PYTHONUTF8: '1', TORCH_HOME: modelsRoot };

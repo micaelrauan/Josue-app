@@ -6,17 +6,10 @@ const view = document.querySelector('#view');
 const audioInput = document.querySelector('#audio-input');
 const nav = document.querySelector('#main-nav');
 const toast = document.querySelector('#toast');
-const state = { page: 'home', tracks: [], setlists: [], selectedSetlist: null, current: null, query: '', sort: 'newest', player: null };
+const state = { page: 'setlists', tracks: [], setlists: [], selectedSetlist: null, current: null, query: '', sort: 'newest', player: null };
 const separationQueue = [];
 let processingQueue = false;
 let importingYoutube = false;
-const products = [
-  { page: 'play', title: 'Play', description: 'Aprenda, pratique e organize suas músicas.', color: '#2ee6ef', icon: 'play' },
-  { page: 'studio', title: 'Studio', description: 'Trabalhe com áudio e faixas em um só lugar.', color: '#48d7a1', icon: 'studio' },
-  { page: 'mastering', title: 'Masterização', description: 'Prepare a versão final da sua música.', color: '#bf86ee', icon: 'mastering' },
-  { page: 'voice', title: 'Voice Studio', description: 'Explore projetos de voz e gravação.', color: '#f693ac', icon: 'voice' },
-  { page: 'lyrics', title: 'Lyric Writer', description: 'Escreva, edite e organize letras.', color: '#63aafa', icon: 'lyrics' },
-];
 
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function formatTime(seconds) { if (!Number.isFinite(seconds)) return '0:00'; const s = Math.max(0, Math.floor(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
@@ -43,7 +36,7 @@ state.setlists = loadSetlists();
 await refreshTracks();
 
 function updateNav() {
-  document.querySelectorAll('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === (state.page === 'player' ? 'studio' : state.page)));
+  document.querySelectorAll('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === (state.page === 'player' ? 'studio' : state.page === 'setlist' ? 'setlists' : state.page)));
   document.querySelector('#setlist-nav').innerHTML = state.setlists.map(item => `<button class="nav-item ${state.page === 'setlist' && state.selectedSetlist === item.id ? 'active' : ''}" data-setlist="${item.id}"><span class="nav-icon">${icon('list', 17)}</span><span class="setlist-name">${escapeHtml(item.name)}</span></button>`).join('');
   document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon, 17); });
 }
@@ -64,14 +57,10 @@ function trackRows(tracks) {
   return `<div class="library-list">${tracks.map(track => `<button class="library-row" data-track="${track.id}"><span class="track-cover">${icon('music',19)}</span><span><span class="track-name">${escapeHtml(track.name)}</span><br><span class="track-meta">${track.files.length} ${track.files.length === 1 ? 'faixa' : 'faixas'} · ${new Date(track.created).toLocaleDateString('pt-BR')}</span></span><span class="track-meta">${track.duration ? formatTime(track.duration) : 'Áudio local'}</span><span class="track-meta">${icon('triangle',16)}</span></button>`).join('')}</div>`;
 }
 function filteredTracks(ids = null) { let items = state.tracks.filter(track => (!ids || ids.includes(track.id)) && track.name.toLocaleLowerCase().includes(state.query.toLocaleLowerCase())); return items.sort((a,b) => state.sort === 'name' ? a.name.localeCompare(b.name) : b.created - a.created); }
-function home() { return `<div class="page home-page"><div class="product-strip">${products.map(p => `<button class="product-card" data-page="${p.page}" style="--art-color:${p.color}"><div class="card-art"><span class="art-lines"></span><span class="art-icon">${icon(p.icon,88)}</span></div><div class="product-content"><div class="small-icon">${icon(p.icon,21)}</div><strong>${p.title}</strong><p>${p.description}</p></div></button>`).join('')}</div><div class="section-head"><h2>Arquivos</h2>${toolbar()}</div>${state.tracks.length ? trackRows(filteredTracks()) : '<div class="empty-box"><strong>Você ainda não tem arquivos!</strong><p>Comece com uma música do seu computador. Seus arquivos ficam salvos somente neste navegador.</p><button class="primary" data-action="upload">' + icon('plus',18) + ' Iniciar um projeto</button></div>'}</div>`; }
-function play() { if (!state.tracks.length) return `<div class="page"><div class="play-empty"><h1>Faça upload da sua primeira música</h1><p>Reproduza, pratique junto e organize suas músicas em um só lugar.</p><button class="primary" data-action="upload">${icon('plus',18)} Fazer upload de música</button></div></div>`; return `<div class="page"><div class="page-heading"><div><h1>Biblioteca</h1><p>Suas músicas salvas neste navegador</p></div><button class="primary" data-action="upload">${icon('plus',18)} Nova música</button></div><div class="section-head"><h2>Músicas</h2>${toolbar()}</div>${trackRows(filteredTracks())}</div>`; }
+function setlistsHome() { return `<div class="page setlists-page"><div class="page-heading"><div><h1>Setlists</h1><p>Organize as músicas que você quer tocar.</p></div><button class="primary" id="create-setlist">${icon('plus',17)} Nova setlist</button></div>${state.setlists.length ? `<div class="setlist-grid">${state.setlists.map(list => `<button class="setlist-card" data-setlist="${list.id}"><span class="setlist-card-icon">${icon('list',22)}</span><strong>${escapeHtml(list.name)}</strong><small>${list.trackIds.length} ${list.trackIds.length === 1 ? 'música' : 'músicas'}</small></button>`).join('')}</div>` : `<div class="empty-box"><strong>Crie sua primeira setlist</strong><p>Reúna as músicas em uma lista para acessar tudo rapidamente.</p><button class="secondary" id="create-setlist-empty">Criar setlist</button></div>`}</div>`; }
 function upload() { return `<div class="page upload-page"><h1>Adicionar música</h1><p>Escolha um arquivo ou cole o link de um vídeo do YouTube. Depois você decide se quer separar os instrumentos.</p><div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Selecionar arquivos de áudio"><span class="drop-plus">${icon('plus',22)}</span><span class="drop-copy"><strong>Solte ou selecione sua música aqui</strong><small>MP3, WAV, FLAC, M4A e outros · até 250 MB por música</small></span></div><form class="youtube-form" id="youtube-form"><label for="youtube-url">Link do YouTube</label><div class="youtube-fields"><input id="youtube-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://www.youtube.com/watch?v=..." required><button class="primary" type="submit" ${importingYoutube ? 'disabled' : ''}>${importingYoutube ? 'Importando...' : 'Importar link'}</button></div><small id="youtube-status" role="status" aria-live="polite">Vídeos de até 20 minutos e 250 MB. Use conteúdo que você tem permissão para baixar.</small></form><p class="upload-explanation">4 faixas: vocais, bateria, baixo e outros instrumentos.<br>6 faixas: acrescenta guitarra e piano (experimental).<br>O áudio é processado neste computador. Em CPU, a separação pode levar vários minutos.</p></div>`; }
 function studioHome() { return `<div class="page"><div class="page-heading"><div><h1>Studio</h1><p>Abra uma música para ajustar os instrumentos e visualizar as formas de onda.</p></div><button class="primary" data-action="upload">${icon('plus',17)} Nova música</button></div><div class="section-head"><h2>Seus projetos</h2>${toolbar()}</div>${trackRows(filteredTracks())}</div>`; }
-function setlist() { const list = state.setlists.find(item => item.id === state.selectedSetlist); if (!list) return '<div class="page">Setlist não encontrada.</div>'; return `<div class="page"><div class="setlist-header"><div><h1>${escapeHtml(list.name)}</h1><p class="track-meta">${list.trackIds.length} músicas</p></div><div class="setlist-actions"><button class="secondary" id="rename-setlist">Renomear</button><button class="secondary" id="delete-setlist">${icon('trash',16)} Excluir</button></div></div><div class="section-head"><h2>Músicas</h2>${toolbar()}</div>${trackRows(filteredTracks(list.trackIds))}</div>`; }
-function feature(title, lead, detail, action) { return `<div class="page feature-page"><h1>${title}</h1><p class="feature-lead">${lead}</p><div class="feature-panel"><h2>${detail}</h2><p>Use seus arquivos locais para continuar. Os recursos de IA do serviço original dependem da infraestrutura do Moises e não estão presentes nesta recriação.</p><button class="primary" data-action="${action}">${icon('plus',18)} ${action === 'upload' ? 'Adicionar música' : 'Abrir biblioteca'}</button></div></div>`; }
-function lyricsPage() { return `<div class="page feature-page"><h1>Lyric Writer</h1><p class="feature-lead">Escreva letras para suas músicas. Abra uma faixa da biblioteca para salvar uma letra junto ao áudio.</p><div class="feature-panel"><h2>Suas músicas</h2>${trackRows(state.tracks)}</div></div>`; }
-function downloads() { return `<div class="page feature-page"><h1>Downloads</h1><p class="feature-lead">Suas músicas estão guardadas no armazenamento local deste navegador. Abra uma música e use o botão de download para exportar o arquivo original.</p><div class="feature-panel">${trackRows(state.tracks)}</div></div>`; }
+function setlist() { const list = state.setlists.find(item => item.id === state.selectedSetlist); if (!list) return '<div class="page">Setlist não encontrada.</div>'; return `<div class="page"><div class="setlist-header"><div><h1>${escapeHtml(list.name)}</h1><p class="track-meta">${list.trackIds.length} músicas</p></div><div class="setlist-actions"><button class="secondary" id="rename-setlist">Renomear</button><button class="secondary" id="delete-setlist">${icon('trash',16)} Excluir</button></div></div><div class="section-head"><h2>Músicas</h2>${list.trackIds.length ? toolbar() : ''}</div>${list.trackIds.length ? trackRows(filteredTracks(list.trackIds)) : `<div class="empty-box"><strong>Esta setlist está vazia</strong><p>Abra uma música no Studio e use “Adicionar à setlist”.</p><button class="primary" data-page="studio">Abrir Studio</button></div>`}</div>`; }
 
 function render() {
   document.body.classList.toggle('studio-active', state.page === 'player');
@@ -80,10 +69,10 @@ function render() {
     const tab = document.createElement('span');
     tab.className = 'studio-project-tab';
     tab.textContent = state.player.track.name;
-    document.querySelector('.titlebar-plus').before(tab);
+    document.querySelector('.titlebar').append(tab);
   }
-  const pages = { home, play, upload, setlist, lyrics: lyricsPage, downloads, studio: studioHome, mastering: () => feature('Masterização','Finalize áudio e prepare versões para compartilhar.','Projetos de áudio','upload'), voice: () => feature('Voice Studio','Organize gravações de voz junto às suas músicas.','Projetos de voz','upload') };
-  view.innerHTML = state.page === 'player' ? playerPage() : (pages[state.page] || home)();
+  const pages = { setlists: setlistsHome, upload, setlist, studio: studioHome };
+  view.innerHTML = state.page === 'player' ? playerPage() : (pages[state.page] || setlistsHome)();
   if (state.page === 'player') setupPlayerView();
 }
 
@@ -182,16 +171,17 @@ function modal(title, value, callback) {
 function createSetlist() { modal('Nova setlist', '', name => { if (!name) return; const item = { id: crypto.randomUUID(), name, trackIds: [] }; state.setlists.push(item); saveSetlists(); go('setlist', { selectedSetlist: item.id }); }); }
 
 nav.addEventListener('click', e => { const button = e.target.closest('[data-page],[data-setlist]'); if (button?.dataset.page) go(button.dataset.page); if (button?.dataset.setlist) go('setlist', { selectedSetlist: button.dataset.setlist }); });
-document.querySelector('.sidebar-bottom').addEventListener('click', e => { const button = e.target.closest('[data-page]'); if (button) go(button.dataset.page); });
 document.querySelector('#new-setlist').addEventListener('click', createSetlist);
 view.addEventListener('click', async e => {
+  if (e.target.closest('#create-setlist, #create-setlist-empty')) { createSetlist(); return; }
+  const setlistButton = e.target.closest('[data-setlist]'); if (setlistButton) { go('setlist', { selectedSetlist: setlistButton.dataset.setlist }); return; }
   const pageButton = e.target.closest('[data-page]'); if (pageButton) { go(pageButton.dataset.page); return; }
-  const action = e.target.closest('[data-action]')?.dataset.action; if (action === 'upload') { go('upload'); return; } if (action === 'library') { go('play'); return; }
+  const action = e.target.closest('[data-action]')?.dataset.action; if (action === 'upload') { go('upload'); return; }
   const trackButton = e.target.closest('[data-track]'); if (trackButton) { await openPlayer(trackButton.dataset.track); return; }
   if (e.target.closest('#dropzone')) { audioInput.click(); return; }
   if (e.target.closest('#sort')) { state.sort = state.sort === 'newest' ? 'name' : 'newest'; render(); return; }
   if (e.target.closest('#rename-setlist')) { const list = state.setlists.find(x => x.id === state.selectedSetlist); modal('Renomear setlist', list.name, name => { if (!name) return; list.name = name; saveSetlists(); updateNav(); render(); }); return; }
-  if (e.target.closest('#delete-setlist')) { const list = state.setlists.find(x => x.id === state.selectedSetlist); if (confirm(`Excluir a setlist “${list.name}”? As músicas serão mantidas.`)) { state.setlists = state.setlists.filter(x => x.id !== list.id); saveSetlists(); go('play'); } return; }
+  if (e.target.closest('#delete-setlist')) { const list = state.setlists.find(x => x.id === state.selectedSetlist); if (confirm(`Excluir a setlist “${list.name}”? As músicas serão mantidas.`)) { state.setlists = state.setlists.filter(x => x.id !== list.id); saveSetlists(); go('setlists'); } return; }
 });
 view.addEventListener('submit', e => { if (e.target.id === 'youtube-form') { e.preventDefault(); importYoutube(e.target); } });
 view.addEventListener('input', e => { if (e.target.id === 'search') { const selection = e.target.selectionStart; state.query = e.target.value; render(); const next = document.querySelector('#search'); if (next) { next.focus(); next.setSelectionRange(selection, selection); } } });

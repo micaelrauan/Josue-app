@@ -8,8 +8,15 @@ export function createAudioExportService({launch=spawn,ffmpegPath,root=resolve('
   const json=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));};
   async function executable(){
     if(ffmpegPath)return ffmpegPath;
-    const directory=join(venvRoot,'Lib','site-packages','imageio_ffmpeg','binaries');
-    const names=await readdir(directory).catch(()=>[]);const name=names.find(n=>/^ffmpeg.*\.exe$/i.test(n));return name?join(directory,name):null;
+    const candidates = process.platform === 'win32'
+      ? [join(venvRoot, 'Lib', 'site-packages', 'imageio_ffmpeg', 'binaries')]
+      : (await readdir(join(venvRoot, 'lib')).catch(() => [])).filter(n => n.startsWith('python')).map(n => join(venvRoot, 'lib', n, 'site-packages', 'imageio_ffmpeg', 'binaries'));
+    for (const directory of candidates) {
+      const names = await readdir(directory).catch(() => []);
+      const name = names.find(n => /^ffmpeg/i.test(n) && (process.platform !== 'win32' || n.endsWith('.exe')));
+      if (name) return join(directory, name);
+    }
+    return null;
   }
   function run(path,args,timeout){
     return new Promise((resolveResult,reject)=>{

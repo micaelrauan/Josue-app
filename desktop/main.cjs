@@ -7,7 +7,9 @@ const { findUpdate, downloadUpdate } = require('./updates.cjs');
 const development = process.env.JOSUE_DEV === '1';
 const PORT = development ? 4175 : 4174;
 const APP_ID = development ? 'com.micaelrauan.josueapp.dev' : 'com.micaelrauan.josueapp';
-const installedData = join(process.env.LOCALAPPDATA || app.getPath('appData'), 'JosueApp');
+const installedData = process.platform === 'win32'
+  ? join(process.env.LOCALAPPDATA || app.getPath('appData'), 'JosueApp')
+  : join(app.getPath('appData'), 'JosueApp');
 const userData = development ? join(__dirname, '..', '.desktop-cache', 'dev-profile') : installedData;
 mkdirSync(userData, { recursive: true });
 app.setPath('userData', userData);
@@ -55,7 +57,7 @@ if (!instanceLock) {
         minHeight: 600,
         show: false,
         backgroundColor: '#101113',
-        icon: join(appRoot, 'desktop', 'icon.ico'),
+        icon: join(appRoot, 'desktop', process.platform === 'darwin' ? 'icon.png' : 'icon.ico'),
         webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },
       });
       window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -73,7 +75,7 @@ if (!instanceLock) {
           reloadTimer = setTimeout(() => window?.webContents.reloadIgnoringCache(), 180);
         });
         app.on('before-quit', () => { clearTimeout(reloadTimer); watcher.close(); });
-      } else {
+      } else if (process.platform === 'win32') {
         let checkingForUpdates = false;
         const checkUpdates = async () => {
           if (!window || !app.isReady() || checkingForUpdates) return;

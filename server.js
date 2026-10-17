@@ -9,7 +9,7 @@ import { createYouTubeImportService } from './youtube-import.js';
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
 
-export function createAppServer({ root = join(projectRoot, 'public'), dataRoot = resolve('.data'), venvRoot = resolve('.venv'), modelsRoot = resolve('.models'), python = process.env.SEPARATION_PYTHON || join(venvRoot, 'Scripts', 'python.exe') } = {}) {
+export function createAppServer({ root = join(projectRoot, 'public'), dataRoot = resolve('.data'), venvRoot = resolve('.venv'), modelsRoot = resolve('.models'), python = process.env.SEPARATION_PYTHON || join(venvRoot, process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python3') } = {}) {
 const separation = createSeparationService({ dataRoot: join(dataRoot, 'separations'), python, worker: join(projectRoot, 'tools', 'separate_audio.py'), modelsRoot });
 const audioExport = createAudioExportService({ root: join(dataRoot, 'exports'), venvRoot });
 const youtubeImport = createYouTubeImportService({ python, dataRoot: join(dataRoot, 'youtube') });
