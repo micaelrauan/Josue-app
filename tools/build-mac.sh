@@ -27,7 +27,7 @@ if [[ ! -f "$cache/$archive" ]]; then
 fi
 curl --fail --location --retry 3 --output "$cache/SHASUMS256-${version}.txt" \
   "https://github.com/electron/electron/releases/download/v${version}/SHASUMS256.txt"
-expected="$(awk -v file="$archive" '$2 == file {print $1}' "$cache/SHASUMS256-${version}.txt")"
+expected="$(awk -v file="$archive" '$2 == file || $2 == "*" file {print $1}' "$cache/SHASUMS256-${version}.txt")"
 [[ -n "$expected" ]] || { echo 'Hash do Electron ausente.' >&2; exit 1; }
 actual="$(shasum -a 256 "$cache/$archive" | awk '{print $1}')"
 [[ "$actual" == "$expected" ]] || { echo 'SHA-256 do Electron não confere.' >&2; exit 1; }

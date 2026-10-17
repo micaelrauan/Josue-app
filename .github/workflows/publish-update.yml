@@ -65,6 +65,7 @@ jobs:
     if: needs.version.outputs.publish == 'true'
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [arm64, x64]
     steps:
