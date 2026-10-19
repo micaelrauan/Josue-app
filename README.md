@@ -5,9 +5,10 @@ Aplicativo local para organizar setlists, importar músicas e trabalhar com áud
 ## Baixar
 
 [![Baixar para Windows](https://img.shields.io/badge/Baixar-Windows-1687B9?style=for-the-badge&logo=windows)](https://github.com/micaelrauan/Josue-app/releases/latest/download/JosueApp-Setup.exe)
-[![Baixar para Mac](https://img.shields.io/badge/Baixar-Mac-333333?style=for-the-badge&logo=apple)](https://github.com/micaelrauan/Josue-app/releases/latest/download/JosueApp-mac-arm64.dmg)
+[![Baixar para Mac Apple Silicon](https://img.shields.io/badge/Mac-Apple%20Silicon-333333?style=for-the-badge&logo=apple)](https://github.com/micaelrauan/Josue-app/releases/latest/download/JosueApp-mac-arm64.dmg)
+[![Baixar para Mac Intel](https://img.shields.io/badge/Mac-Intel-333333?style=for-the-badge&logo=apple)](https://github.com/micaelrauan/Josue-app/releases/latest/download/JosueApp-mac-x64.dmg)
 
-O app para Mac requer macOS 12 (Monterey) ou mais recente. O botão Mac baixa a versão para Apple Silicon (M1 ou mais recente). Para Mac Intel, [baixe o instalador Intel](https://github.com/micaelrauan/Josue-app/releases/latest/download/JosueApp-mac-x64.dmg). Abra o DMG e arraste **Josue App** para **Applications**. O app para macOS usa assinatura local; na primeira abertura, pode ser necessário clicar com o botão direito no aplicativo e escolher **Abrir**. Os arquivos aparecem na Release depois que o build de Windows e os dois builds de Mac terminam.
+O app para Mac requer macOS 12 (Monterey) ou mais recente. Em ** > Sobre Este Mac**, confira se aparece **Chip** (Apple Silicon) ou **Processador Intel** e escolha o botão correspondente acima. Se aparecer a mensagem de que o app não é compatível com este tipo de Mac, remova a cópia instalada e baixe o DMG da arquitetura correta. Abra o DMG e arraste **Josue App** para **Applications**. O app para macOS usa assinatura local; na primeira abertura, pode ser necessário clicar com o botão direito no aplicativo e escolher **Abrir**. Os arquivos aparecem na Release depois que o build de Windows e os dois builds de Mac terminam.
 
 No Windows, execute **JosueApp-Setup.exe**. Ele instala o aplicativo e prepara o motor de áudio. O pacote portátil **JosueApp-windows-x64.zip** também fica disponível na Release.
 
