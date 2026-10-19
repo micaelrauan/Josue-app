@@ -15,7 +15,7 @@ esac
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 app_version="$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).version' "$root/package.json")"
-version=44.7.0
+version=43.8.0
 archive="electron-v${version}-darwin-${electron_arch}.zip"
 cache="$root/.desktop-cache"
 dist="$root/dist"
@@ -60,10 +60,12 @@ set_plist "$plist" CFBundleDisplayName 'Josue App'
 set_plist "$plist" CFBundleIdentifier com.micaelrauan.josueapp
 set_plist "$plist" CFBundleShortVersionString "$app_version"
 set_plist "$plist" CFBundleVersion "$app_version"
+set_plist "$plist" LSMinimumSystemVersion 12.0
 for helper_plist in "$app"/Contents/Frameworks/*Helper*.app/Contents/Info.plist; do
   [[ -f "$helper_plist" ]] || continue
   set_plist "$helper_plist" CFBundleName 'Josue App Helper'
   set_plist "$helper_plist" CFBundleDisplayName 'Josue App Helper'
+  set_plist "$helper_plist" LSMinimumSystemVersion 12.0
 done
 iconset="$work/Josue.iconset"
 mkdir -p "$iconset"
