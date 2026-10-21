@@ -74,6 +74,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
+      - name: Verificar comando do motor macOS
+        run: bash -n tools/setup-separation-mac.command
       - name: Gerar instalador macOS
         run: bash tools/build-mac.sh ${{ matrix.arch }}
       - uses: actions/upload-artifact@v4

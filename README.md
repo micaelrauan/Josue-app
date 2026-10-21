@@ -33,7 +33,7 @@ No Windows, execute **JosueApp-Setup.exe**. Ele instala o aplicativo e prepara o
 - **Adicionar música:** importe arquivos locais ou um link do YouTube.
 - **Separação opcional:** use Demucs para separar vocais e instrumentos em 4 ou 6 faixas. O modelo de 6 faixas é experimental.
 
-No macOS, o Studio e a importação de arquivos locais funcionam após instalar o app. Para separação, importação por link e exportação MP3/M4A, instale Python 3.11 ou 3.12 e execute **Instalar motor.command** incluído no DMG. Essa etapa baixa PyTorch, Demucs, yt-dlp e FFmpeg, requer internet e alguns GB livres. Reinicie o app ao terminar. Exportação WAV funciona sem o motor.
+No macOS, o Studio e a importação de arquivos locais funcionam após instalar o app. Para separação, importação por link e exportação MP3/M4A, execute **Instalar motor.command** incluído no DMG. Se Python 3.11 ou 3.12 não estiver instalado, o comando baixa o instalador oficial do Python 3.12 e abre a janela de instalação antes de continuar. Essa etapa também baixa PyTorch, Demucs, yt-dlp e FFmpeg, requer internet e alguns GB livres. Reinicie o app ao terminar. Exportação WAV funciona sem o motor.
 
 Use somente conteúdo que você tem permissão para baixar. A importação por link e a separação aceitam arquivos de até 250 MB e 20 minutos. Separar áudio em CPU pode levar vários minutos.
 

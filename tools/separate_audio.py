@@ -11,6 +11,9 @@ def event(stage, message, progress):
 
 
 def dependencies():
+    if sys.platform == 'darwin':
+        import certifi
+        os.environ.setdefault('SSL_CERT_FILE', certifi.where())
     import torch
     import soundfile
     import imageio_ffmpeg
