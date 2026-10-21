@@ -2,6 +2,20 @@
 
 Aplicativo local para organizar setlists, importar músicas e trabalhar com áudio no Studio. Não exige conta. Seus projetos ficam no próprio computador.
 
+## Usar no navegador
+
+Instale [Node.js 22 ou mais recente](https://nodejs.org/en/download), baixe este repositório e execute na pasta do projeto:
+
+```bash
+npm start
+```
+
+Abra **http://127.0.0.1:4173/** no navegador. Para desenvolvimento, use `npm run dev` e atualize a página depois de editar os arquivos da interface. Se a porta 4173 estiver ocupada, defina `PORT` antes de iniciar o servidor. O acesso fica restrito a este computador.
+
+Setlists, arquivos importados e ajustes ficam no armazenamento do navegador usado. Mantenha o mesmo navegador e endereço para acessar os projetos novamente; limpar os dados do site pode apagá-los. Importação de arquivos locais, reprodução e exportação WAV funcionam sem instalar o motor de áudio. Separação, importação por link e exportação MP3/M4A precisam do motor Python e FFmpeg. A versão web reutiliza o motor instalado pelo aplicativo desktop quando ele está disponível; no Windows, também é possível instalá-lo na pasta do projeto com `powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup-separation.ps1`. No macOS, execute `bash tools/setup-separation-mac.command` para prepará-lo. Esses downloads exigem internet e alguns GB livres.
+
+O código da versão web está neste repositório. Para abri-la, execute o servidor Node localmente; o GitHub Pages não executa as APIs de processamento de áudio.
+
 ## Baixar
 
 [![Baixar para Windows](https://img.shields.io/badge/Baixar-Windows-1687B9?style=for-the-badge&logo=windows)](https://github.com/micaelrauan/Josue-app/releases/latest/download/JosueApp-Setup.exe)
@@ -42,6 +56,8 @@ Requer [Node.js 22+](https://nodejs.org/en/download). Clone o repositório e exe
 
 | Comando | Ambiente | Resultado |
 | --- | --- | --- |
+| `npm start` | Windows, macOS ou Linux | Abre o servidor web local em `127.0.0.1:4173`. |
+| `npm run dev` | Windows, macOS ou Linux | Reinicia o servidor web ao alterar o código Node. |
 | `npm run dev:desktop` | Windows | Abre o app com recarga automática. |
 | `npm run build:installer` | Windows | Gera `dist/JosueApp-Setup.exe`. |
 | `npm run build:mac` | macOS | Gera um DMG para a arquitetura atual. |

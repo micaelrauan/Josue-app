@@ -10,6 +10,8 @@
   "type": "module",
   "main": "desktop/main.cjs",
   "scripts": {
+    "start": "node web.js",
+    "dev": "node --watch web.js",
     "dev:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev-desktop.ps1",
     "build:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-desktop.ps1",
     "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-installer.ps1",
